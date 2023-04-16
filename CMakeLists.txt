@@ -69,6 +69,18 @@ option(BRICK_BUILD_TEST "Include various tests as build target" ON)
 
 option(HAS_HMM "Use ATS/HMM for CUDA (not-used)" OFF)
 
+set(STENCIL_RADIUS "1" CACHE STRING "Stencil radius used for performance experiments")
+set_property(CACHE STENCIL_RADIUS PROPERTY STRINGS "1" "2" "3" "4")
+if (STENCIL_RADIUS)
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DSTENCIL_RADIUS_${STENCIL_RADIUS}")
+endif()
+
+set(CODEGEN_ARCH "NVIDIA" CACHE STRING "Codegen arch used for performance experiments")
+set_property(CACHE CODEGEN_ARCH PROPERTY STRINGS "NVIDIA" "AMD")
+if (CODEGEN_ARCH)
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DCODEGEN_ARCH_${CODEGEN_ARCH}")
+endif()
+
 # MacOS doesn't have librt
 # shm_open is recommended to link with -lrt (man page)
 find_library(LIBRT rt)
@@ -135,6 +147,7 @@ endif()
 add_subdirectory(src)
 if (BRICK_BUILD_TEST)
     add_subdirectory(single)
+    add_subdirectory(examples/perf_port)
     if (MPI_FOUND)
         add_subdirectory(weak)
         add_subdirectory(strong)

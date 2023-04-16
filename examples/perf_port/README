@@ -1,0 +1,62 @@
+Running Stencil Performance Portability Tests with different Programming Models and GPU Architectures.
+On configuration stage with cmake, the option -DSTENCIL_RADIUS=1 is default.
+
+Instructions to run on CRUSHER-OLCF:
+
+-Running with SYCL:
+
+$ module load dpcpp/22.09
+$ mkdir build && cd build
+$ cmake -DHAS_SYCL=ON -DCODEGEN_ARCH=AMD -DOpenMP_CXX_FLAGS="-fopenmp" -DOpenMP_CXX_LIB_NAMES="libiomp" -DOpenMP_libiomp_LIBRARY=sw/crusher/dpcpp/22.09/lib/ ..
+$ make single-perf-sycl
+$ ./examples/perf_port/sycl -s star
+
+-Running with HIP:
+
+$ module load amd PrgEnv-amd
+$ mkdir build && cd build
+$ cmake -DBRICK_USE_HIP=ON -DCODEGEN_ARCH=AMD ..
+$ make single-perf-hip
+$ ./examples/perf_port/hip -s star
+
+-Profiling with ROCM. Use prof_star.txt located in this directory
+
+$ module load rocm
+$ rocprof -i prof_star.txt --timestamp on -o star_7pt_d512.csv ./examples/perf_port/sycl -s star
+$ rocprof -i prof_cube.txt --timestamp on -o cube_27pt_d512.csv ./examples/perf_port/sycl -s cube
+
+Instructions to run on PERLMUTTER-NERSC:
+
+-Running with SYCL:
+
+$ module use --append path-to-codeplay-module/modulefiles (path where codeplay modules are)
+$ module load codeplay-oneAPI-for-CUDA
+$ mkdir build && cd build
+$ cmake -DHAS_SYCL=ON -DCODEGEN_ARCH=NVIDIA -DCMAKE_CXX_COMPILER=/global/cfs/projectdirs/m1759/codeplay/codeplay-oneapi-for-cuda-suse15/bin/clang++ ..
+$ make single-perf-sycl
+$ ./examples/perf_port/sycl -s star
+
+-Running with CUDA:
+
+$ module load cmake cudatoolkit nvidia
+$ mkdir build && cd build
+$ cmake ..
+$ make single-perf-cuda
+$ ./examples/perf_port/cuda -s star
+
+-Running with HIP:
+
+Here, we can compile with hipcc. CMake is unavailable for now:
+
+$ module load hip
+$ export HIP_PATH=/global/common/software/nersc/easybuild/perlmutter/21.10/software/hip/5.3.2
+$ cd examples/perf_port
+$ ./../../codegen/vecscatter d3_stencils.hip.cpp d3_stencils-out.hip.cpp -- -DBACKEND=HIP -fopenmp -O2 -I/pscratch/sd/o/oantepar/perf_port_bricks/bricklib/include/ -I/pscratch/sd/o/oantepar/perf_port_bricks/bricklib/ -I/${HIP_PATH}/include -D__HIP_PLATFORM_NVIDIA__
+$ hipcc hip.cpp d3_stencils-out.hip.cpp -I /pscratch/sd/o/oantepar/perf_port_bricks/bricklib/include/ -L /pscratch/sd/o/oantepar/perf_port_bricks/bricklib/build/src/ -l brickhelper -I /pscratch/sd/o/oantepar/perf_port_bricks/bricklib/ -I. -o hip -O2 -Xcompiler -fopenmp -DCODEGEN_ARCH=NVIDIA
+$ ./hip -s star
+
+-Profiling with ncu
+
+$ dcgmi profile --pause
+$ nv-nsight-cu-cli -k regex:d3star --metrics "sm__sass_thread_inst_executed_op_dfma_pred_on.sum,sm__sass_thread_inst_executed_op_dadd_pred_on.sum,sm__sass_thread_inst_executed_op_dmul_pred_on.sum,sm__cycles_elapsed.avg,sm__cycles_elapsed.avg.per_second,dram__bytes.sum" ./examples/perf_port/sycl -s star > star_7pt_d512.csv
+$ nv-nsight-cu-cli -k regex:d3cube --metrics "sm__sass_thread_inst_executed_op_dfma_pred_on.sum,sm__sass_thread_inst_executed_op_dadd_pred_on.sum,sm__sass_thread_inst_executed_op_dmul_pred_on.sum,sm__cycles_elapsed.avg,sm__cycles_elapsed.avg.per_second,dram__bytes.sum" ./examples/perf_port/sycl -s cube > cube_27pt_d512.csv
