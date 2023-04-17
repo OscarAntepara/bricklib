@@ -1,5 +1,6 @@
 Running Stencil Performance Portability Tests with different Programming Models and GPU Architectures.
-On configuration stage with cmake, the option -DSTENCIL_RADIUS=1 is default.
+On configuration stage with cmake, the options -DSTENCIL_RADIUS=1 and -DCODEGEN_ARCH=NVIDIA are default.
+For the instructions below go to BrickLib source directory and then execute the command lines.
 
 Instructions to run on CRUSHER-OLCF:
 
