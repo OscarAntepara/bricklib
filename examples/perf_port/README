@@ -6,7 +6,7 @@ Instructions to run on CRUSHER-OLCF:
 
 -Running with SYCL:
 
-$ module load dpcpp/22.09
+$ module load cmake dpcpp/22.09
 $ mkdir build && cd build
 $ cmake -DHAS_SYCL=ON -DCODEGEN_ARCH=AMD -DOpenMP_CXX_FLAGS="-fopenmp" -DOpenMP_CXX_LIB_NAMES="libiomp" -DOpenMP_libiomp_LIBRARY=sw/crusher/dpcpp/22.09/lib/ ..
 $ make single-perf-sycl
@@ -14,7 +14,7 @@ $ ./examples/perf_port/sycl -s star
 
 -Running with HIP:
 
-$ module load amd PrgEnv-amd
+$ module load cmake amd PrgEnv-amd
 $ mkdir build && cd build
 $ cmake -DBRICK_USE_HIP=ON -DCODEGEN_ARCH=AMD ..
 $ make single-perf-hip
@@ -31,7 +31,7 @@ Instructions to run on PERLMUTTER-NERSC:
 -Running with SYCL:
 
 $ module use --append path-to-codeplay-module/modulefiles (path where codeplay modules are)
-$ module load codeplay-oneAPI-for-CUDA
+$ module load cmake codeplay-oneAPI-for-CUDA
 $ mkdir build && cd build
 $ cmake -DHAS_SYCL=ON -DCODEGEN_ARCH=NVIDIA -DCMAKE_CXX_COMPILER=/global/cfs/projectdirs/m1759/codeplay/codeplay-oneapi-for-cuda-suse15/bin/clang++ ..
 $ make single-perf-sycl
