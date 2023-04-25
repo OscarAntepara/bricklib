@@ -22,6 +22,8 @@
 
 #include "args.h"
 
+#define PRINT_ARRAY_KERNEL_INFO 0
+
 typedef Brick<Dim<BDIM>, Dim<VFOLD>> Brick3D;
 
 __global__ void arr_kernel(bElem *in_ptr, bElem *out_ptr, unsigned *stride) {
@@ -176,7 +178,7 @@ int main(int argc, char **argv) {
     double total;
 
     total = time_mpi(arr_func, cnt, bDecomp);
-    cnt *= ST_ITER;
+    //cnt *= ST_ITER;
 
     // Copy back
     copyFromDevice(stride, out_ptr, out_ptr_dev);
@@ -184,8 +186,9 @@ int main(int argc, char **argv) {
     cudaFree(in_ptr_dev);
     cudaFree(out_ptr_dev);
     cudaFree(arr_stride_dev);
+#if PRINT_ARRAY_KERNEL_INFO
     {
-      mpi_stats calc_s = mpi_statistics(calctime / cnt, MPI_COMM_WORLD);
+      mpi_stats calc_s = mpi_statistics(calctime / (cnt*ST_ITER), MPI_COMM_WORLD);
       mpi_stats call_s = mpi_statistics(calltime / cnt, MPI_COMM_WORLD);
       mpi_stats wait_s = mpi_statistics(waittime / cnt, MPI_COMM_WORLD);
       mpi_stats mspd_s =
@@ -212,7 +215,7 @@ int main(int argc, char **argv) {
         std::cout << std::endl;
       }
     }
-
+#endif
     // setup brick on device
     BrickInfo<3> *bInfo_dev;
     auto _bInfo_dev = movBrickInfo(bInfo, cudaMemcpyHostToDevice);
@@ -287,13 +290,13 @@ int main(int argc, char **argv) {
     };
 
     total = time_mpi(brick_func, cnt, bDecomp);
-    cnt *= ST_ITER;
+    //cnt *= ST_ITER;
 
     // Copy back
     cudaMemcpy(bStorageOut.dat.get(), bStorageOut_dev.dat.get(),
                bStorageOut.step * bStorageOut.chunks * sizeof(bElem), cudaMemcpyDeviceToHost);
     {
-      mpi_stats calc_s = mpi_statistics(calctime / cnt, MPI_COMM_WORLD);
+      mpi_stats calc_s = mpi_statistics(calctime / (cnt*ST_ITER), MPI_COMM_WORLD);
       mpi_stats call_s = mpi_statistics(calltime / cnt, MPI_COMM_WORLD);
       mpi_stats wait_s = mpi_statistics(waittime / cnt, MPI_COMM_WORLD);
       mpi_stats mspd_s =
