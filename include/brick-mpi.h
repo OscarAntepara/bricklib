@@ -367,90 +367,130 @@ public:
 #endif
     };
 
-    std::vector<unsigned> st_pos;  // The starting position of a segment
-    std::vector<bool> pad_first;
-
-    BitSet last = 0;
-    for (long i = 0; i < skinlist.size(); ++i) {
-      BitSet next = 0;
-      if (i < skinlist.size() - 1)
-        next = skinlist[i + 1];
-      pad_first.push_back(((last & skinlist[i]).size() < (skinlist[i] & next).size()));
-      last = skinlist[i];
-    }
-
-    // Allocating inner region
-    mypop(0, 0);
-
-    st_pos.emplace_back(pos);
-    sep_pos[0] = pos;
-
-    skin_size.clear();
-    // Allocating skinlist
-    for (long i = 0; i < skinlist.size(); ++i) {
-      long ppos = pos;
-      if (pad_first[i])
-        pos += calc_pad(skinlist[i]);
-      if (skinlist[i].set != 0)
-        mypop(0, skinlist[i]);
+    // Special treatment for single-brick problem
+    // TODO a better solution requires inclusion/exclusion calculation
+    bool single_brick = true;
+    for (int i = 0; i < dim; ++i)
+      single_brick = single_brick && (dims[i] == g_depth[i]);
+    if (single_brick) {
+      std::vector<unsigned> st_pos; // The starting position of a segment
       st_pos.emplace_back(pos);
-      skin_size.emplace_back(pos - ppos);
-    }
-    sep_pos[1] = pos;
-
-    /* Allocating ghost
-     * A ghost regions contains all region that are superset of the "inverse"
-     */
-    std::vector<BitSet> neighbors;
-    allneighbors(0, 1, dim, neighbors);
-    ghost.clear();
-    skin.clear();
-    for (auto n: neighbors) {
-      if (n.set == 0)
-        continue;
-      BitSet in = !n;
-      g_region g, i;
-      int last = -1;
-      g.neighbor = n;
-      i.neighbor = in;
-      // Following the order of the skinlist
-      // Record contiguousness
-      for (int l = 0; l < skinlist.size(); ++l)
-        if (in <= skinlist[l]) {
-          if (last < 0) {
-            last = l;
-            i.skin_st = g.skin_st = (unsigned) last;
-            i.first_pad = g.first_pad = pad_first[last] ? calc_pad(skinlist[last]) : 0;
-            g.pos = pos;
-            i.pos = st_pos[last];
-          }
-          if (pad_first[l])
-            pos += calc_pad(skinlist[l]);
-          mypop(n, skinlist[l]);
-        } else if (last >= 0) {
-          last = l;
-          i.last_pad = g.last_pad = pad_first[last - 1] ? 0 : calc_pad(skinlist[last - 1]);
-          g.skin_ed = (unsigned) last;
-          g.len = pos - g.pos;
-          ghost.emplace_back(g);
-          i.len = st_pos[last] - i.pos;
-          i.skin_ed = (unsigned) last;
-          skin.emplace_back(i);
-          last = -1;
-        }
-      if (last >= 0) {
-        last = skinlist.size();
-        i.last_pad = g.last_pad = pad_first[last - 1] ? 0 : calc_pad(skinlist[last - 1]);
-        g.skin_ed = (unsigned) last;
+      sep_pos[0] = pos;
+      mypop(0, 0xfff);
+      sep_pos[1] = pos;
+      st_pos.emplace_back(pos);
+      /* Allocating ghost
+       * A ghost regions contains all region that are superset of the "inverse"
+       */
+      std::vector<BitSet> neighbors;
+      allneighbors(0, 1, dim, neighbors);
+      ghost.clear();
+      skin.clear();
+      for (auto n : neighbors) {
+        if (n.set == 0)
+          continue;
+        BitSet in = !n;
+        g_region g, i;
+        g.neighbor = n;
+        i.neighbor = in;
+        for (int i = 1; i <= dim; ++i)
+          if (!in.get(i) && !in.get(-i))
+            in.flip(i);
+        i.pos = st_pos[0];
+        i.len = st_pos.back() - st_pos[0];
+        i.first_pad = g.first_pad = 0;
+        i.last_pad = g.last_pad = calc_pad(in);
+        g.pos = pos;
+        mypop(n, in);
         g.len = pos - g.pos;
         ghost.emplace_back(g);
-        i.len = st_pos[skinlist.size()] - i.pos;
-        i.skin_ed = (unsigned) last;
         skin.emplace_back(i);
+      }
+    } else {
+      std::vector<unsigned> st_pos; // The starting position of a segment
+      std::vector<bool> pad_first;
+
+      BitSet last = 0;
+      for (long i = 0; i < skinlist.size(); ++i) {
+        BitSet next = 0;
+        if (i < skinlist.size() - 1)
+          next = skinlist[i + 1];
+        pad_first.push_back(((last & skinlist[i]).size() < (skinlist[i] & next).size()));
+        last = skinlist[i];
+      }
+
+      // Allocating inner region
+      mypop(0, 0);
+
+      st_pos.emplace_back(pos);
+      sep_pos[0] = pos;
+
+      skin_size.clear();
+      // Allocating skinlist
+      for (long i = 0; i < skinlist.size(); ++i) {
+        long ppos = pos;
+        if (pad_first[i])
+          pos += calc_pad(skinlist[i]);
+        if (skinlist[i].set != 0)
+          mypop(0, skinlist[i]);
+        st_pos.emplace_back(pos);
+        skin_size.emplace_back(pos - ppos);
+      }
+      sep_pos[1] = pos;
+
+      /* Allocating ghost
+       * A ghost regions contains all region that are superset of the "inverse"
+       */
+      std::vector<BitSet> neighbors;
+      allneighbors(0, 1, dim, neighbors);
+      ghost.clear();
+      skin.clear();
+      for (auto n : neighbors) {
+        if (n.set == 0)
+          continue;
+        BitSet in = !n;
+        g_region g, i;
+        int last = -1;
+        g.neighbor = n;
+        i.neighbor = in;
+        // Following the order of the skinlist
+        // Record contiguousness
+        for (int l = 0; l < skinlist.size(); ++l)
+          if (in <= skinlist[l]) {
+            if (last < 0) {
+              last = l;
+              i.skin_st = g.skin_st = (unsigned)last;
+              i.first_pad = g.first_pad = pad_first[last] ? calc_pad(skinlist[last]) : 0;
+              g.pos = pos;
+              i.pos = st_pos[last];
+            }
+            if (pad_first[l])
+              pos += calc_pad(skinlist[l]);
+            mypop(n, skinlist[l]);
+          } else if (last >= 0) {
+            last = l;
+            i.last_pad = g.last_pad = pad_first[last - 1] ? 0 : calc_pad(skinlist[last - 1]);
+            g.skin_ed = (unsigned)last;
+            g.len = pos - g.pos;
+            ghost.emplace_back(g);
+            i.len = st_pos[last] - i.pos;
+            i.skin_ed = (unsigned)last;
+            skin.emplace_back(i);
+            last = -1;
+          }
+        if (last >= 0) {
+          last = skinlist.size();
+          i.last_pad = g.last_pad = pad_first[last - 1] ? 0 : calc_pad(skinlist[last - 1]);
+          g.skin_ed = (unsigned)last;
+          g.len = pos - g.pos;
+          ghost.emplace_back(g);
+          i.len = st_pos[skinlist.size()] - i.pos;
+          i.skin_ed = (unsigned)last;
+          skin.emplace_back(i);
+        }
       }
     }
     sep_pos[2] = pos;
-
     // Convert grid to adjlist
     int size = pos;
     if (bInfo == nullptr)
