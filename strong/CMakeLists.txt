@@ -11,7 +11,7 @@ if(CMAKE_CUDA_COMPILER)
     VSTARGET(C3MPI main.cu main-out.cu)
     add_executable(strong-cuda ${VSTARGET_C3MPI_OUTPUT} args.cpp)
     target_compile_definitions(strong-cuda PRIVATE DECOMP_PAGEUNALIGN)
-    target_link_libraries(strong-cuda brick brick-mpi brickhelper ${MPI_CXX_LIBRARIES} ${LIBRT})
+    target_link_libraries(strong-cuda brick brick-mpi brickhelper ${MPI_CXX_LIBRARIES} ${LIBRT} /opt/cray/pe/mpich/8.1.25/gtl/lib/libmpi_gtl_cuda.so)
     set_target_properties(strong-cuda
             PROPERTIES OUTPUT_NAME cuda)
 
