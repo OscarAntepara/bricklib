@@ -2,10 +2,13 @@ if (HAS_SYCL)
     set(SYCL3AXIS_INCLUDE_DIRS
             "${SYCL_DIR}/include"
             "${SYCL_DIR}/include/sycl")
-    if (CMAKE_CUDA_COMPILER)
+    if (${CODEGEN_ARCH} MATCHES "INTEL")
+        set(SYCL3AXIS_COMPILE_OPTIONS
+            "-fsycl")
+    elseif (${CODEGEN_ARCH} MATCHES "NVIDIA")
         set(SYCL3AXIS_COMPILE_OPTIONS
             "-fsycl -fsycl-targets=nvptx64-nvidia-cuda -Xsycl-target-backend '--cuda-gpu-arch=sm_80'")
-    else()
+    elseif (${CODEGEN_ARCH} MATCHES "AMD")
         set(SYCL3AXIS_COMPILE_OPTIONS
             "-fsycl -fsycl-targets=amdgcn-amd-amdhsa -Xsycl-target-backend --offload-arch=gfx90a")
     endif ()
@@ -18,10 +21,13 @@ if (HAS_SYCL)
             PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}/stencils")
     target_link_directories(single-perf-sycl PUBLIC "${SYCL_DIR}/lib")
     # sycl need option for both phase
-    if (CMAKE_CUDA_COMPILER)
+    if (${CODEGEN_ARCH} MATCHES "INTEL")
+        target_compile_options(single-perf-sycl PUBLIC -fsycl)
+        target_link_options(single-perf-sycl PUBLIC -fsycl)
+    elseif (${CODEGEN_ARCH} MATCHES "NVIDIA")
         target_compile_options(single-perf-sycl PUBLIC -fsycl -fsycl-targets=nvptx64-nvidia-cuda -Xsycl-target-backend '--cuda-gpu-arch=sm_80')
         target_link_options(single-perf-sycl PUBLIC -fsycl -fsycl-targets=nvptx64-nvidia-cuda -Xsycl-target-backend '--cuda-gpu-arch=sm_80')
-    else()
+    elseif (${CODEGEN_ARCH} MATCHES "AMD")
         target_compile_options(single-perf-sycl PUBLIC -fsycl -fsycl-targets=amdgcn-amd-amdhsa -Xsycl-target-backend --offload-arch=gfx90a)
         target_link_options(single-perf-sycl PUBLIC -fsycl -fsycl-targets=amdgcn-amd-amdhsa -Xsycl-target-backend --offload-arch=gfx90a)
     endif ()

@@ -98,10 +98,12 @@ if __name__ == "__main__":
             return BackendCuFlex()
         elif vec == 'OPENCL':
             return BackendCUDA(16, 'sglid', ocl=True)
-        elif vec == 'SYCL':
+        elif vec == 'SYCL-NVIDIA':
             return BackendCUDA(32, 'sglid', ocl=False)
         elif vec == 'SYCL-AMD':
             return BackendCUDA(64, 'sglid', ocl=False)
+        elif vec == 'SYCL-INTEL':
+            return BackendCUDA(16, 'sglid', ocl=False)
         elif vec == 'HIP':
             return BackendCUDA(32, 'hipThreadIdx_x')
         elif vec == 'HIP-AMD':
@@ -162,7 +164,7 @@ if __name__ == "__main__":
             stride = stride + [1] * (len(dim) - len(stride))
             from st.codegen.backend import Brick
             layout = Brick(dim=dim, fold=fold, prec=prec, brick_idx=bidx,
-                           cstruct=False if vec != 'OPENCL' and vec != 'SYCL' and vec != 'SYCL-AMD' else True)
+                           cstruct=False if vec != 'OPENCL' and vec != 'SYCL-NVIDIA' and vec != 'SYCL-AMD' and vec != 'SYCL-INTEL' else True)
             from st.codegen.base import CodeGen
             cg = CodeGen(backend, layout, dag_msize=arg.msize, scatter_thres=arg.thres, unroll=arg.unroll,
                          dimsplit=arg.dsplit, stride=stride, K=arg.K, klimit=arg.limit)

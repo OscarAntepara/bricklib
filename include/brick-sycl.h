@@ -19,11 +19,9 @@ typedef struct oclbrick {
 
 #ifndef NDEBUG
 static sycl::property_list properties{sycl::property::queue::enable_profiling()};
-static sycl::queue gpu_queue = sycl::queue(sycl::gpu_selector(), properties);
-static sycl::queue cpu_queue = sycl::queue(sycl::host_selector(), properties);
+static sycl::queue gpu_queue = sycl::queue(sycl::device(sycl::gpu_selector()), properties);
 #else
-static sycl::queue gpu_queue = sycl::queue(sycl::gpu_selector());
-static sycl::queue cpu_queue = sycl::queue(sycl::host_selector());
+static sycl::queue gpu_queue = sycl::queue(sycl::device(sycl::gpu_selector()), properties);
 #endif
 
 enum syclError_t {

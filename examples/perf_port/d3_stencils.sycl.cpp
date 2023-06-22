@@ -9,19 +9,36 @@
 #include "macros_coeffs.h"
 
 #if defined (CODEGEN_ARCH_NVIDIA)
-#define VSVEC "SYCL"
+#define VSVEC "SYCL-NVIDIA"
 #define SYCL_SUBGROUP 32
 #undef VFOLD
-#define VFOLD 4, 8
-#else
+#define VFOLD 4,8 
+#endif
+#if defined (CODEGEN_ARCH_AMD)
 #define VSVEC "SYCL-AMD"
 #define SYCL_SUBGROUP 64
 #undef VFOLD
 #define VFOLD 8, 8
 #endif
+#if defined (CODEGEN_ARCH_INTEL)
+#define VSVEC "SYCL-INTEL"
+#define SYCL_SUBGROUP 16
+#undef VFOLD
+#define VFOLD 1, 16
+#endif
+
+#undef TILE
+#define TILE 4
 
 #undef PADDING
-#define PADDING 8
+#define PADDING TILE
+
+#undef GZ
+#define GZ TILE
+
+#define TILEX 16
+#define GZX TILEX
+#define PADDINGX TILEX
 
 #undef N 
 #define N 512
@@ -30,32 +47,35 @@
 #define NY N / 1 //4
 #define NZ N / 1 //4
 
-#define STRIDEX (NX + 2 * (GZ + PADDING))
+#define STRIDEX (NX + 2 * (GZX + PADDINGX))
 #define STRIDEY (NY + 2 * (GZ + PADDING))
 #define STRIDEZ (NZ + 2 * (GZ + PADDING))
 
-#define STRIDEGX (NX + 2 * GZ)
+#define STRIDEGX (NX + 2 * GZX)
 #define STRIDEGY (NY + 2 * GZ)
 #define STRIDEGZ (NZ + 2 * GZ)
 
-#define STRIDEBX ((NX + 2 * GZ) / TILE)
+#define STRIDEBX ((NX + 2 * GZX) / TILEX)
 #define STRIDEBY ((NY + 2 * GZ) / TILE)
 #define STRIDEBZ ((NZ + 2 * GZ) / TILE)
 
-#define NBX (NX / TILE)
+#define NBX (NX / TILEX)
 #define NBY (NY / TILE)
 #define NBZ (NZ / TILE)
+
+#define GBX (GZX / TILEX)
+#undef BDIM
+#define BDIM TILE,TILE,TILEX
 
 #undef _TILEFOR
 #define _TILEFOR _Pragma("omp parallel for collapse(2)") \
 for (long tk = PADDING; tk < PADDING + STRIDEGZ; tk += TILE) \
 for (long tj = PADDING; tj < PADDING + STRIDEGY; tj += TILE) \
-for (long ti = PADDING; ti < PADDING + STRIDEGX; ti += TILE) \
+for (long ti = PADDINGX; ti < PADDINGX + STRIDEGX; ti += TILEX) \
 for (long k = tk; k < tk + TILE; ++k) \
 for (long j = tj; j < tj + TILE; ++j) \
 _Pragma("omp simd") \
-for (long i = ti; i < ti + TILE; ++i)
-
+for (long i = ti; i < ti + TILEX; ++i)
 
 using namespace cl::sycl;
 
@@ -84,6 +104,13 @@ void printInfo(cl::sycl::device &Device) {
 
   std::cout << "Compute units: " << dot_num_groups << std::endl;
   std::cout << "Workgroup size: " << dot_wgsize << std::endl;
+
+  std::cout << "Sub-group Sizes Available on this device: ";
+  for (const auto &s :
+       Device.get_info<sycl::info::device::sub_group_sizes>()) {
+    std::cout << s << " ";
+  }
+  std::cout << std::endl;
 }
 
 void syclinit() {
@@ -95,7 +122,8 @@ void syclinit() {
       const std::string DeviceVendor = Device.get_info<cl::sycl::info::device::vendor>();
 
       return (Device.is_gpu() && ((DeviceName.find("NVIDIA") != std::string::npos)
-                              || (DeviceName.find("gfx") != std::string::npos)))
+                              || (DeviceName.find("gfx") != std::string::npos)
+                              || (DeviceName.find("Intel") != std::string::npos)))
                  ? 1
                  : -1;
     }
@@ -132,7 +160,7 @@ void d3_stencils_cube_sycl() {
 
   cl::sycl::queue squeue(*sycl_device, {cl::sycl::property::queue::enable_profiling()});
 
-  copyToBrick<3>({STRIDEGX, STRIDEGY, STRIDEGZ}, {PADDING, PADDING, PADDING}, {0, 0, 0}, in_ptr,
+  copyToBrick<3>({STRIDEGX, STRIDEGY, STRIDEGZ}, {PADDINGX, PADDING, PADDING}, {0, 0, 0}, in_ptr,
                  grid_ptr, bIn);
   // Setup bricks for opencl
   //buffer<bElem, 1> coeff_buf(coeff, range<1>(125));
@@ -141,7 +169,7 @@ void d3_stencils_cube_sycl() {
 
   for (long tk = GB; tk < STRIDEBZ - GB; ++tk)
     for (long tj = GB; tj < STRIDEBY - GB; ++tj)
-      for (long ti = GB; ti < STRIDEBX - GB; ++ti)
+      for (long ti = GBX; ti < STRIDEBX - GBX; ++ti)
         bIdx.push_back(grid[tk][tj][ti]);
 
   buffer<unsigned, 1> bIdx_buf(bIdx.data(), range<1>(bIdx.size()));
@@ -188,9 +216,9 @@ void d3_stencils_cube_sycl() {
     auto arr_in = arr_in_buf.get_access<access::mode::read>(cgh);
     auto arr_out = arr_out_buf.get_access<access::mode::write>(cgh);
 
-    nd_range<3> nworkitem(range<3>(NX, NY, NZ), range<3>(TILE, TILE, TILE));
+    nd_range<3> nworkitem(range<3>(NX, NY, NZ), range<3>(TILEX, TILE, TILE));
     cgh.parallel_for<class d3cube_arr>(nworkitem, [=](nd_item<3> WIid) {
-      auto i = WIid.get_global_id(0) + GZ + PADDING;
+      auto i = WIid.get_global_id(0) + GZX + PADDINGX;
       auto j = WIid.get_global_id(1) + GZ + PADDING;
       auto k = WIid.get_global_id(2) + GZ + PADDING;
 
@@ -222,11 +250,12 @@ void d3_stencils_cube_sycl() {
 
     nd_range<3> nworkitem(range<3>(NX, STRIDEBY-2, STRIDEBZ-2), range<3>(SYCL_SUBGROUP, 1, 1));
     cgh.parallel_for<class d3cube_arr_codegen>(
-        nworkitem, [=](nd_item<3> WIid) {
+        nworkitem, [=](nd_item<3> WIid) [[intel::reqd_sub_group_size(SYCL_SUBGROUP)]] {
+        //nworkitem, [=](nd_item<3> WIid) {
 
       long k = GZ + PADDING + WIid.get_group(2) * TILE;
       long j = GZ + PADDING + WIid.get_group(1) * TILE;
-      long i = GZ + PADDING + WIid.get_group(0) * SYCL_SUBGROUP;
+      long i = GZX + PADDINGX + WIid.get_group(0) * SYCL_SUBGROUP;
       unsigned sglid = WIid.get_local_id(0);
           tile("cube"+str(CUBE_STENCIL_RADIUS)+".py", VSVEC, (TILE, TILE, SYCL_SUBGROUP), ("k", "j", "i"), (1, 1, SYCL_SUBGROUP));
         });
@@ -263,7 +292,7 @@ void d3_stencils_cube_sycl() {
     auto len = bIdx.size();
     auto bInfo_s = bInfo_buf.get_access<access::mode::read>(cgh);
 
-    nd_range<3> nworkitem(range<3>(NX, NY, NZ), range<3>(TILE, TILE, TILE));
+    nd_range<3> nworkitem(range<3>(NX, NY, NZ), range<3>(TILEX, TILE, TILE));
     cgh.parallel_for<class d3cube_brick>(nworkitem, [=](nd_item<3> WIid) {
 
       long bk = WIid.get_group(2);
@@ -311,11 +340,11 @@ void d3_stencils_cube_sycl() {
           auto SG = WIid.get_sub_group();
           auto sglid = WIid.get_local_id();
 
-          oclbrick bIn = {bDat_s.get_pointer(), adj_s.get_pointer(), 1024};
-          oclbrick bOut = {((bElem *)bDat_s.get_pointer()) + 512, adj_s.get_pointer(), 1024};
+          oclbrick bIn = {bDat_s.get_pointer(), adj_s.get_pointer(), bSize * 2};
+          oclbrick bOut = {((bElem *)bDat_s.get_pointer()) + bSize, adj_s.get_pointer(), bSize * 2};
           for (unsigned i = WIid.get_group(0); i < len; i += WIid.get_group_range(0)) {
             unsigned b = bIdx_s[i];
-            brick("cube"+str(CUBE_STENCIL_RADIUS)+".py", VSVEC, (8, 8, 8), (VFOLD), b);
+            brick("cube"+str(CUBE_STENCIL_RADIUS)+".py", VSVEC, (TILE, TILE, TILEX), (VFOLD), b);
           }
         });
   };
@@ -340,25 +369,26 @@ void d3_stencils_cube_sycl() {
       cgh.copy(bDat_s, bStorage.dat);
     });
   }
+  squeue.wait();
 
   {
-    if (!compareBrick<3>({NX, NY, NZ}, {PADDING, PADDING, PADDING}, {GZ, GZ, GZ}, out_ptr, grid_ptr,
+    if (!compareBrick<3>({NX, NY, NZ}, {PADDINGX, PADDING, PADDING}, {GZX, GZ, GZ}, out_ptr, grid_ptr,
                          bOut)) {
       std::cout << "result mismatch!" << std::endl;
       // Identify mismatch
       for (long tk = GB; tk < STRIDEBZ - GB; ++tk)
         for (long tj = GB; tj < STRIDEBY - GB; ++tj)
-          for (long ti = GB; ti < STRIDEBX - GB; ++ti) {
+          for (long ti = GBX; ti < STRIDEBX - GBX; ++ti) {
             auto b = grid[tk][tj][ti];
             for (long k = 0; k < TILE; ++k)
               for (long j = 0; j < TILE; ++j)
-                for (long i = 0; i < TILE; ++i) {
+                for (long i = 0; i < TILEX; ++i) {
                   auto aval = arr_out[tk * TILE + k + PADDING][tj * TILE + j + PADDING]
-                                     [ti * TILE + i + PADDING];
+                                     [ti * TILEX + i + PADDINGX];
                   auto diff = abs(bOut[b][k][j][i] - aval);
                   auto sum = abs(bOut[b][k][j][i]) + abs(aval);
                   if (sum > 1e-6 && diff / sum > 1e-6)
-                    std::cout << "mismatch at " << ti * TILE + i - TILE << " : "
+                    std::cout << "mismatch at " << ti * TILEX + i - PADDINGX << " : "
                               << tj * TILE + j - TILE << " : " << tk * TILE + k - TILE << " : "
                               << bOut[b][k][j][i] << " : " << aval <<" brick "<<ti<<" "<<tj<<" "<<tk<< std::endl;
                 }
@@ -373,9 +403,10 @@ void d3_stencils_cube_sycl() {
       cgh.copy(arr_out, out_ptr);
     });
   }
+  squeue.wait();
 
   {
-    if (!compareBrick<3>({NX, NY, NZ}, {PADDING, PADDING, PADDING}, {GZ, GZ, GZ}, out_ptr, grid_ptr,
+    if (!compareBrick<3>({NX, NY, NZ}, {PADDINGX, PADDING, PADDING}, {GZX, GZ, GZ}, out_ptr, grid_ptr,
                          bOut)) {
       std::cout << "result mismatch!" << std::endl;
                     }
@@ -413,7 +444,7 @@ void d3_stencils_star_sycl() {
 
   cl::sycl::queue squeue(*sycl_device, {cl::sycl::property::queue::enable_profiling()});
 
-  copyToBrick<3>({STRIDEGX, STRIDEGY, STRIDEGZ}, {PADDING, PADDING, PADDING}, {0, 0, 0}, in_ptr,
+  copyToBrick<3>({STRIDEGX, STRIDEGY, STRIDEGZ}, {PADDINGX, PADDING, PADDING}, {0, 0, 0}, in_ptr,
                  grid_ptr, bIn);
   // Setup bricks for opencl
   //buffer<bElem, 1> coeff_buf(coeff, range<1>(129));
@@ -422,7 +453,7 @@ void d3_stencils_star_sycl() {
 
   for (long tk = GB; tk < STRIDEBZ - GB; ++tk)
     for (long tj = GB; tj < STRIDEBY - GB; ++tj)
-      for (long ti = GB; ti < STRIDEBX - GB; ++ti)
+      for (long ti = GBX; ti < STRIDEBX - GBX; ++ti)
         bIdx.push_back(grid[tk][tj][ti]);
 
   buffer<unsigned, 1> bIdx_buf(bIdx.data(), range<1>(bIdx.size()));
@@ -460,9 +491,9 @@ void d3_stencils_star_sycl() {
     auto arr_in = arr_in_buf.get_access<access::mode::read>(cgh);
     auto arr_out = arr_out_buf.get_access<access::mode::write>(cgh);
 
-    nd_range<3> nworkitem(range<3>(NX, NY, NZ), range<3>(TILE, TILE, TILE));
+    nd_range<3> nworkitem(range<3>(NX, NY, NZ), range<3>(TILEX, TILE, TILE));
     cgh.parallel_for<class d3star_arr>(nworkitem, [=](nd_item<3> WIid) {
-      auto i = WIid.get_global_id(0) + GZ + PADDING;
+      auto i = WIid.get_global_id(0) + GZX + PADDINGX;
       auto j = WIid.get_global_id(1) + GZ + PADDING;
       auto k = WIid.get_global_id(2) + GZ + PADDING;
       ST_STAR_ARR_GPU;
@@ -492,7 +523,7 @@ void d3_stencils_star_sycl() {
 
       long k = GZ + PADDING + WIid.get_group(2) * TILE;
       long j = GZ + PADDING + WIid.get_group(1) * TILE;
-      long i = GZ + PADDING + WIid.get_group(0) * SYCL_SUBGROUP;
+      long i = GZX + PADDINGX + WIid.get_group(0) * SYCL_SUBGROUP;
       unsigned sglid = WIid.get_local_id(0);
             tile("star"+str(STAR_STENCIL_RADIUS)+".py", VSVEC, (TILE, TILE, SYCL_SUBGROUP), ("k", "j", "i"), (1, 1, SYCL_SUBGROUP));
 
@@ -525,7 +556,7 @@ void d3_stencils_star_sycl() {
     auto len = bIdx.size();
     auto bInfo_s = bInfo_buf.get_access<access::mode::read>(cgh);
 
-    nd_range<3> nworkitem(range<3>(NX, NY, NZ), range<3>(TILE, TILE, TILE));
+    nd_range<3> nworkitem(range<3>(NX, NY, NZ), range<3>(TILEX, TILE, TILE));
     cgh.parallel_for<class d3star_brick>(nworkitem, [=](nd_item<3> WIid) {
 
       long bk = WIid.get_group(2);
@@ -568,11 +599,11 @@ void d3_stencils_star_sycl() {
           auto SG = WIid.get_sub_group();
           auto sglid = WIid.get_local_id();
 
-          oclbrick bIn = {bDat_s.get_pointer(), adj_s.get_pointer(), 1024};
-          oclbrick bOut = {((bElem *)bDat_s.get_pointer()) + 512, adj_s.get_pointer(), 1024};
+          oclbrick bIn = {bDat_s.get_pointer(), adj_s.get_pointer(), bSize * 2};
+          oclbrick bOut = {((bElem *)bDat_s.get_pointer()) + bSize, adj_s.get_pointer(), bSize * 2};
           for (unsigned i = WIid.get_group(0); i < len; i += WIid.get_group_range(0)) {
             unsigned b = bIdx_s[i];
-            brick("star"+str(STAR_STENCIL_RADIUS)+".py", VSVEC, (8, 8, 8), (VFOLD), b);
+            brick("star"+str(STAR_STENCIL_RADIUS)+".py", VSVEC, (TILE, TILE, TILEX), (VFOLD), b);
           }
         });
   };
@@ -597,25 +628,26 @@ void d3_stencils_star_sycl() {
       cgh.copy(bDat_s, bStorage.dat);
     });
   }
+  squeue.wait();
 
   {
-    if (!compareBrick<3>({NX, NY, NZ}, {PADDING, PADDING, PADDING}, {GZ, GZ, GZ}, out_ptr, grid_ptr,
+    if (!compareBrick<3>({NX, NY, NZ}, {PADDINGX, PADDING, PADDING}, {GZX, GZ, GZ}, out_ptr, grid_ptr,
                          bOut)) {
       std::cout << "result mismatch!" << std::endl;
       // Identify mismatch
       for (long tk = GB; tk < STRIDEBZ - GB; ++tk)
         for (long tj = GB; tj < STRIDEBY - GB; ++tj)
-          for (long ti = GB; ti < STRIDEBX - GB; ++ti) {
+          for (long ti = GBX; ti < STRIDEBX - GBX; ++ti) {
             auto b = grid[tk][tj][ti];
             for (long k = 0; k < TILE; ++k)
               for (long j = 0; j < TILE; ++j)
-                for (long i = 0; i < TILE; ++i) {
+                for (long i = 0; i < TILEX; ++i) {
                   auto aval = arr_out[tk * TILE + k + PADDING][tj * TILE + j + PADDING]
-                                     [ti * TILE + i + PADDING];
+                                     [ti * TILEX + i + PADDINGX];
                   auto diff = abs(bOut[b][k][j][i] - aval);
                   auto sum = abs(bOut[b][k][j][i]) + abs(aval);
                   if (sum > 1e-6 && diff / sum > 1e-6)
-                    std::cout << "mismatch at " << ti * TILE + i - TILE << " : "
+                    std::cout << "mismatch at " << ti * TILEX + i - TILEX << " : "
                               << tj * TILE + j - TILE << " : " << tk * TILE + k - TILE << " : "
                               << bOut[b][k][j][i] << " : " << aval <<" brick "<<ti<<" "<<tj<<" "<<tk<< std::endl;
                 }
@@ -631,9 +663,10 @@ void d3_stencils_star_sycl() {
     });
 
   }
+  squeue.wait();
 
   {
-    if (!compareBrick<3>({NX, NY, NZ}, {PADDING, PADDING, PADDING}, {GZ, GZ, GZ}, out_ptr, grid_ptr,
+    if (!compareBrick<3>({NX, NY, NZ}, {PADDINGX, PADDING, PADDING}, {GZX, GZ, GZ}, out_ptr, grid_ptr,
                          bOut)) {
       std::cout << "result mismatch!" << std::endl;
     }

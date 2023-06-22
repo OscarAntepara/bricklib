@@ -2,6 +2,21 @@ Running Stencil Performance Portability Tests with different Programming Models 
 On configuration stage with cmake, the options -DSTENCIL_RADIUS=1 and -DCODEGEN_ARCH=NVIDIA are default.
 For the instructions below go to BrickLib source directory and then execute the command lines.
 
+Instructions to run on FLORENTIA-ALCF:
+
+-Running with SYCL:
+
+$ module load cmake oneapi
+$ mkdir build && cd build
+$ cmake -DHAS_SYCL=ON -DCODEGEN_ARCH=INTEL ..
+$ make single-perf-sycl
+$ ZE_AFFINITY_MASK=0.0 ./examples/perf_port/sycl -s star
+
+-Profiling with Intel Advisor. ZE_AFFINITY_MASK=0.0 to just run with one stack.
+
+$ ZE_AFFINITY_MASK=0.0 advisor --collect=roofline --profile-gpu -- ./examples/perf_port/sycl -s star
+$ advisor --report=all --project-dir=. --report-output=roofline_bricks_star.html
+
 Instructions to run on CRUSHER-OLCF:
 
 -Running with SYCL:
