@@ -12,19 +12,22 @@
 #define VSVEC "SYCL-NVIDIA"
 #define SYCL_SUBGROUP 32
 #undef VFOLD
-#define VFOLD 4,8 
+#define VFOLD 1,32 
+#define TILEX 32
 #endif
 #if defined (CODEGEN_ARCH_AMD)
 #define VSVEC "SYCL-AMD"
 #define SYCL_SUBGROUP 64
 #undef VFOLD
-#define VFOLD 8, 8
+#define VFOLD 1, 64
+#define TILEX 64
 #endif
 #if defined (CODEGEN_ARCH_INTEL)
 #define VSVEC "SYCL-INTEL"
 #define SYCL_SUBGROUP 16
 #undef VFOLD
 #define VFOLD 1, 16
+#define TILEX 16
 #endif
 
 #undef TILE
@@ -36,7 +39,6 @@
 #undef GZ
 #define GZ TILE
 
-#define TILEX 16
 #define GZX TILEX
 #define PADDINGX TILEX
 

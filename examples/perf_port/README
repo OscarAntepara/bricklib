@@ -43,12 +43,11 @@ $ rocprof -i prof_cube.txt --timestamp on -o cube_27pt_d512.csv ./examples/perf_
 
 Instructions to run on PERLMUTTER-NERSC:
 
--Running with SYCL. It's recommended to follow the example and instructions for the modules here - https://www.nersc.gov/users/training/events/an-introduction-to-programming-with-sycl-on-perlmutter-and-beyond-march2022/:
+-Running with SYCL. It's recommended to follow the example and instructions for the modules here - https://www.nersc.gov/users/training/events/advanced-sycl-techniques-and-best-practices-may2023/:
 
-$ module use --append path-to-codeplay-module/modulefiles (path where codeplay modules are)
-$ module load cmake codeplay-oneAPI-for-CUDA
+$ module load cmake intel-llvm
 $ mkdir build && cd build
-$ cmake -DHAS_SYCL=ON -DCODEGEN_ARCH=NVIDIA -DCMAKE_CXX_COMPILER=/global/cfs/projectdirs/m1759/codeplay/codeplay-oneapi-for-cuda-suse15/bin/clang++ ..
+$ cmake -DHAS_SYCL=ON -DCODEGEN_ARCH=NVIDIA ..
 $ make single-perf-sycl
 $ ./examples/perf_port/sycl -s star
 

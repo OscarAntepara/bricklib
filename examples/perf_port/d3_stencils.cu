@@ -12,50 +12,64 @@
 #define VSVEC "CUDA"
 #define WARPSIZE 32
 #undef VFOLD
-#define VFOLD 4, 8
+#define VFOLD 1, 32
+
+#undef TILE
+#define TILE 4
 
 #undef PADDING
-#define PADDING 8
+#define PADDING TILE
+
+#undef GZ
+#define GZ TILE
+
+#define TILEX 32
+#define GZX TILEX
+#define PADDINGX TILEX
 
 #undef N 
 #define N 512
 
-#define NX N * 1 //4
+#define NX N / 1 //4
 #define NY N / 1 //4
-#define NZ N / 1 //16
+#define NZ N * 1 //16
 
-#define STRIDEX (NX + 2 * (GZ + PADDING))
+#define STRIDEX (NX + 2 * (GZX + PADDINGX))
 #define STRIDEY (NY + 2 * (GZ + PADDING))
 #define STRIDEZ (NZ + 2 * (GZ + PADDING))
 
-#define STRIDEGX (NX + 2 * GZ)
+#define STRIDEGX (NX + 2 * GZX)
 #define STRIDEGY (NY + 2 * GZ)
 #define STRIDEGZ (NZ + 2 * GZ)
 
-#define STRIDEBX ((NX + 2 * GZ) / TILE)
+#define STRIDEBX ((NX + 2 * GZX) / TILEX)
 #define STRIDEBY ((NY + 2 * GZ) / TILE)
 #define STRIDEBZ ((NZ + 2 * GZ) / TILE)
 
-#define NBX (NX / TILE)
+#define NBX (NX / TILEX)
 #define NBY (NY / TILE)
 #define NBZ (NZ / TILE)
+
+#define GBX (GZX / TILEX)
+#undef BDIM
+#define BDIM TILE,TILE,TILEX
 
 #undef _TILEFOR
 #define _TILEFOR _Pragma("omp parallel for collapse(2)") \
 for (long tk = PADDING; tk < PADDING + STRIDEGZ; tk += TILE) \
 for (long tj = PADDING; tj < PADDING + STRIDEGY; tj += TILE) \
-for (long ti = PADDING; ti < PADDING + STRIDEGX; ti += TILE) \
+for (long ti = PADDINGX; ti < PADDINGX + STRIDEGX; ti += TILEX) \
 for (long k = tk; k < tk + TILE; ++k) \
 for (long j = tj; j < tj + TILE; ++j) \
 _Pragma("omp simd") \
-for (long i = ti; i < ti + TILE; ++i)
+for (long i = ti; i < ti + TILEX; ++i)
 
 __global__ void
 d3star_brick(unsigned (*grid)[STRIDEBY][STRIDEBX], Brick <Dim<BDIM>, Dim<VFOLD>> bIn, Brick <Dim<BDIM>, Dim<VFOLD>> bOut){
             //bElem *coeff) {
   long tj = GB + blockIdx.y;
   long tk = GB + blockIdx.z;
-  long ti = GB + blockIdx.x;
+  long ti = GBX + blockIdx.x;
   long k = threadIdx.z;
   long j = threadIdx.y;
   long i = threadIdx.x;
@@ -78,7 +92,7 @@ d3cube_brick(unsigned (*grid)[STRIDEBY][STRIDEBX], Brick <Dim<BDIM>, Dim<VFOLD>>
             //bElem (*coeff)[8][8]) {
   long tj = GB + blockIdx.y;
   long tk = GB + blockIdx.z;
-  long ti = GB + blockIdx.x;
+  long ti = GBX + blockIdx.x;
   long k = threadIdx.z;
   long j = threadIdx.y;
   long i = threadIdx.x;
@@ -106,7 +120,7 @@ d3star_brick_codegen(unsigned (*grid)[STRIDEBY][STRIDEBX], Brick <Dim<BDIM>, Dim
                   //bElem *coeff) {
   long tk = GB + blockIdx.z;
   long tj = GB + blockIdx.y;
-  long ti = GB + blockIdx.x;
+  long ti = GBX + blockIdx.x;
   unsigned b = grid[tk][tj][ti];
   brick("star"+str(STAR_STENCIL_RADIUS)+".py", VSVEC, (BDIM), (VFOLD), b);
 }
@@ -117,7 +131,7 @@ d3cube_brick_codegen(unsigned (*grid)[STRIDEBY][STRIDEBX], Brick <Dim<BDIM>, Dim
                   //bElem (*coeff)[8][8]) {
   long tk = GB + blockIdx.z;
   long tj = GB + blockIdx.y;
-  long ti = GB + blockIdx.x;
+  long ti = GBX + blockIdx.x;
   unsigned b = grid[tk][tj][ti];
   brick("cube"+str(CUBE_STENCIL_RADIUS)+".py", VSVEC, (BDIM), (VFOLD), b);
 }
@@ -127,7 +141,7 @@ d3star_arr(bElem (*arr_in)[STRIDEY][STRIDEX], bElem (*arr_out)[STRIDEY][STRIDEX]
            //bElem *coeff) {
   long k = PADDING + GZ + blockIdx.z * TILE + threadIdx.z;
   long j = PADDING + GZ + blockIdx.y * TILE + threadIdx.y;
-  long i = PADDING + GZ + blockIdx.x * TILE + threadIdx.x;
+  long i = PADDINGX + GZX + blockIdx.x * TILEX + threadIdx.x;
   ST_STAR_ARR_GPU;
   /*
   arr_out[k][j][i] = coeff[0] * arr_in[k][j][i];
@@ -145,7 +159,7 @@ d3cube_arr(bElem (*arr_in)[STRIDEY][STRIDEX], bElem (*arr_out)[STRIDEY][STRIDEX]
            //bElem (*coeff)[8][8]) {
   long k = PADDING + GZ + blockIdx.z * TILE + threadIdx.z;
   long j = PADDING + GZ + blockIdx.y * TILE + threadIdx.y;
-  long i = PADDING + GZ + blockIdx.x * TILE + threadIdx.x;
+  long i = PADDINGX + GZX + blockIdx.x * TILEX + threadIdx.x;
   ST_CUBE_ARR_GPU;
   /*
   arr_out[k][j][i] = 0.0;
@@ -171,7 +185,7 @@ d3star_arr_codegen(bElem (*arr_in)[STRIDEY][STRIDEX], bElem (*arr_out)[STRIDEY][
                    //bElem *coeff) {
   long k = GZ + blockIdx.z * TILE;
   long j = GZ + blockIdx.y * TILE;
-  long i = GZ + blockIdx.x * WARPSIZE;
+  long i = GZX + blockIdx.x * WARPSIZE;
   tile("star"+str(STAR_STENCIL_RADIUS)+".py", VSVEC, (TILE, TILE, WARPSIZE), ("k", "j", "i"), (1, 1, WARPSIZE));
 }
 
@@ -180,7 +194,7 @@ d3cube_arr_codegen(bElem (*arr_in)[STRIDEY][STRIDEX], bElem (*arr_out)[STRIDEY][
                    //bElem (*coeff)[8][8]) {
   long k = GZ + blockIdx.z * TILE;
   long j = GZ + blockIdx.y * TILE;
-  long i = GZ + blockIdx.x * WARPSIZE;
+  long i = GZX + blockIdx.x * WARPSIZE;
   tile("cube"+str(CUBE_STENCIL_RADIUS)+".py", VSVEC, (TILE, TILE, WARPSIZE), ("k", "j", "i"), (1, 1, WARPSIZE));
 }
 
@@ -232,7 +246,7 @@ void d3_stencils_star_cuda() {
     Brick<Dim<BDIM>, Dim<VFOLD>> bOut(&bInfo, bstorage, bsize);
 
     // Copy data to the bricks
-    copyToBrick<3>({STRIDEGX, STRIDEGY, STRIDEGZ}, {PADDING, PADDING, PADDING}, {0, 0, 0}, in_ptr, grid_ptr, bIn);
+    copyToBrick<3>({STRIDEGX, STRIDEGY, STRIDEGZ}, {PADDINGX, PADDING, PADDING}, {0, 0, 0}, in_ptr, grid_ptr, bIn);
     BrickStorage bstorage_dev = movBrickStorage(bstorage, cudaMemcpyHostToDevice);
 
     auto arr_func_tile = [&arr_in, &arr_out]() -> void {
@@ -252,13 +266,13 @@ void d3_stencils_star_cuda() {
         auto bSize = cal_size<BDIM>::value;
         Brick <Dim<BDIM>, Dim<VFOLD>> bIn(binfo_dev, bstorage_dev, 0);
         Brick <Dim<BDIM>, Dim<VFOLD>> bOut(binfo_dev, bstorage_dev, bSize);
-        dim3 block(NBX, NBY, NBZ), thread(BDIM);
+        dim3 block(NBX, NBY, NBZ), thread(TILEX,TILE,TILE);
         d3star_brick<<<block,thread>>>(grid, bIn, bOut);
     };
     auto arr_func = [&in_dev, &out_dev]() -> void {
         bElem(*arr_in)[STRIDEY][STRIDEX] = (bElem (*)[STRIDEY][STRIDEX]) in_dev;
         bElem(*arr_out)[STRIDEY][STRIDEX] = (bElem (*)[STRIDEY][STRIDEX]) out_dev;
-        dim3 block(NBX, NBY, NBZ), thread(BDIM);
+        dim3 block(NBX, NBY, NBZ), thread(TILEX,TILE,TILE);
         d3star_arr<<<block,thread>>>(arr_in, arr_out);
     };
     auto arr_func_codegen = [&in_dev, &out_dev]() -> void {
@@ -287,11 +301,11 @@ void d3_stencils_star_cuda() {
 
     cudaMemcpy(bstorage.dat.get(), bstorage_dev.dat.get(), bstorage.chunks * bstorage.step * sizeof(bElem), cudaMemcpyDeviceToHost);
 
-    if (!compareBrick<3>({NX, NY, NZ}, {PADDING, PADDING, PADDING}, {GZ, GZ, GZ}, out_ptr, grid_ptr, bOut))
+    if (!compareBrick<3>({NX, NY, NZ}, {PADDINGX, PADDING, PADDING}, {GZX, GZ, GZ}, out_ptr, grid_ptr, bOut))
         throw std::runtime_error("result mismatch!");
 
     cudaMemcpy(out_ptr, out_dev, bsize, cudaMemcpyDeviceToHost);
-    if (!compareBrick<3>({NX, NY, NZ}, {PADDING, PADDING, PADDING}, {GZ, GZ, GZ}, out_ptr, grid_ptr, bOut))
+    if (!compareBrick<3>({NX, NY, NZ}, {PADDINGX, PADDING, PADDING}, {GZX, GZ, GZ}, out_ptr, grid_ptr, bOut))
         throw std::runtime_error("result mismatch!");
 
     free(in_ptr);
@@ -347,7 +361,7 @@ void d3_stencils_cube_cuda() {
     Brick<Dim<BDIM>, Dim<VFOLD>> bOut(&bInfo, bstorage, bsize);
 
     // Copy data to the bricks
-    copyToBrick<3>({STRIDEGX, STRIDEGY, STRIDEGZ}, {PADDING, PADDING, PADDING}, {0, 0, 0}, in_ptr, grid_ptr, bIn);
+    copyToBrick<3>({STRIDEGX, STRIDEGY, STRIDEGZ}, {PADDINGX, PADDING, PADDING}, {0, 0, 0}, in_ptr, grid_ptr, bIn);
     BrickStorage bstorage_dev = movBrickStorage(bstorage, cudaMemcpyHostToDevice);
 
     //auto coeff_cube = (bElem (*)[8][8]) coeff;
@@ -376,13 +390,13 @@ void d3_stencils_cube_cuda() {
         auto bSize = cal_size<BDIM>::value;
         Brick <Dim<BDIM>, Dim<VFOLD>> bIn(binfo_dev, bstorage_dev, 0);
         Brick <Dim<BDIM>, Dim<VFOLD>> bOut(binfo_dev, bstorage_dev, bSize);
-        dim3 block(NBX, NBY, NBZ), thread(BDIM);
+        dim3 block(NBX, NBY, NBZ), thread(TILEX,TILE,TILE);
         d3cube_brick<<<block,thread>>>(grid, bIn, bOut);
     };
     auto arr_func = [&in_dev, &out_dev]() -> void {
         bElem(*arr_in)[STRIDEY][STRIDEX] = (bElem (*)[STRIDEY][STRIDEX]) in_dev;
         bElem(*arr_out)[STRIDEY][STRIDEX] = (bElem (*)[STRIDEY][STRIDEX]) out_dev;
-        dim3 block(NBX, NBY, NBZ), thread(BDIM);
+        dim3 block(NBX, NBY, NBZ), thread(TILEX,TILE,TILE);
         d3cube_arr<<<block,thread>>>(arr_in, arr_out);
     };
     auto arr_func_codegen = [&in_dev, &out_dev]() -> void {
@@ -411,11 +425,11 @@ void d3_stencils_cube_cuda() {
 
     cudaMemcpy(bstorage.dat.get(), bstorage_dev.dat.get(), bstorage.chunks * bstorage.step * sizeof(bElem), cudaMemcpyDeviceToHost);
 
-    if (!compareBrick<3>({NX, NY, NZ}, {PADDING, PADDING, PADDING}, {GZ, GZ, GZ}, out_ptr, grid_ptr, bOut))
+    if (!compareBrick<3>({NX, NY, NZ}, {PADDINGX, PADDING, PADDING}, {GZX, GZ, GZ}, out_ptr, grid_ptr, bOut))
         throw std::runtime_error("result mismatch!");
 
     cudaMemcpy(out_ptr, out_dev, bsize, cudaMemcpyDeviceToHost);
-    if (!compareBrick<3>({NX, NY, NZ}, {PADDING, PADDING, PADDING}, {GZ, GZ, GZ}, out_ptr, grid_ptr, bOut))
+    if (!compareBrick<3>({NX, NY, NZ}, {PADDINGX, PADDING, PADDING}, {GZX, GZ, GZ}, out_ptr, grid_ptr, bOut))
         throw std::runtime_error("result mismatch!");
 
     free(in_ptr);
