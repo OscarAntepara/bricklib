@@ -10,19 +10,31 @@
 #include "macros_coeffs.h"
 
 #if defined(CODEGEN_ARCH_NVIDIA)
+#undef VSVEC
 #define VSVEC "HIP"
 #define WARPSIZE 32
 #undef VFOLD
 #define VFOLD 4, 8
 #else
+#undef VSVEC
 #define VSVEC "HIP-AMD"
 #define WARPSIZE 64
 #undef VFOLD
-#define VFOLD 8, 8
+#define VFOLD 1, 64
 #endif
 
+#undef TILE
+#define TILE 4
+
 #undef PADDING
-#define PADDING 8
+#define PADDING TILE
+
+#undef GZ
+#define GZ TILE
+
+#define TILEX 64
+#define GZX TILEX
+#define PADDINGX TILEX
 
 #undef N 
 #define N 512
@@ -31,38 +43,42 @@
 #define NY N / 1 //4
 #define NZ N / 1 //4
 
-#define STRIDEX (NX + 2 * (GZ + PADDING))
+#define STRIDEX (NX + 2 * (GZX + PADDINGX))
 #define STRIDEY (NY + 2 * (GZ + PADDING))
 #define STRIDEZ (NZ + 2 * (GZ + PADDING))
 
-#define STRIDEGX (NX + 2 * GZ)
+#define STRIDEGX (NX + 2 * GZX)
 #define STRIDEGY (NY + 2 * GZ)
 #define STRIDEGZ (NZ + 2 * GZ)
 
-#define STRIDEBX ((NX + 2 * GZ) / TILE)
+#define STRIDEBX ((NX + 2 * GZX) / TILEX)
 #define STRIDEBY ((NY + 2 * GZ) / TILE)
 #define STRIDEBZ ((NZ + 2 * GZ) / TILE)
 
-#define NBX (NX / TILE)
+#define NBX (NX / TILEX)
 #define NBY (NY / TILE)
 #define NBZ (NZ / TILE)
+
+#define GBX (GZX / TILEX)
+#undef BDIM
+#define BDIM TILE,TILE,TILEX
 
 #undef _TILEFOR
 #define _TILEFOR _Pragma("omp parallel for collapse(2)") \
 for (long tk = PADDING; tk < PADDING + STRIDEGZ; tk += TILE) \
 for (long tj = PADDING; tj < PADDING + STRIDEGY; tj += TILE) \
-for (long ti = PADDING; ti < PADDING + STRIDEGX; ti += TILE) \
+for (long ti = PADDINGX; ti < PADDINGX + STRIDEGX; ti += TILEX) \
 for (long k = tk; k < tk + TILE; ++k) \
 for (long j = tj; j < tj + TILE; ++j) \
 _Pragma("omp simd") \
-for (long i = ti; i < ti + TILE; ++i)
+for (long i = ti; i < ti + TILEX; ++i)
 
 __global__ void
 d3star_brick(unsigned (*grid)[STRIDEBY][STRIDEBX], Brick <Dim<BDIM>, Dim<VFOLD>> bIn, Brick <Dim<BDIM>, Dim<VFOLD>> bOut){
             //bElem *coeff) {
   long tj = GB + hipBlockIdx_y;
   long tk = GB + hipBlockIdx_z;
-  long ti = GB + hipBlockIdx_x;
+  long ti = GBX + hipBlockIdx_x;
   long k = hipThreadIdx_z;
   long j = hipThreadIdx_y;
   long i = hipThreadIdx_x;
@@ -85,7 +101,7 @@ d3cube_brick(unsigned (*grid)[STRIDEBY][STRIDEBX], Brick <Dim<BDIM>, Dim<VFOLD>>
             //bElem (*coeff)[8][8]) {
   long tj = GB + hipBlockIdx_y;
   long tk = GB + hipBlockIdx_z;
-  long ti = GB + hipBlockIdx_x;
+  long ti = GBX + hipBlockIdx_x;
   long k = hipThreadIdx_z;
   long j = hipThreadIdx_y;
   long i = hipThreadIdx_x;
@@ -113,7 +129,7 @@ d3star_brick_codegen(unsigned (*grid)[STRIDEBY][STRIDEBX], Brick <Dim<BDIM>, Dim
                   //bElem *coeff) {
   long tk = GB + hipBlockIdx_z;
   long tj = GB + hipBlockIdx_y;
-  long ti = GB + hipBlockIdx_x;
+  long ti = GBX + hipBlockIdx_x;
   unsigned b = grid[tk][tj][ti];
   brick("star"+str(STAR_STENCIL_RADIUS)+".py", VSVEC, (BDIM), (VFOLD), b);
 }
@@ -124,7 +140,7 @@ d3cube_brick_codegen(unsigned (*grid)[STRIDEBY][STRIDEBX], Brick <Dim<BDIM>, Dim
                   //bElem (*coeff)[8][8]) {
   long tk = GB + hipBlockIdx_z;
   long tj = GB + hipBlockIdx_y;
-  long ti = GB + hipBlockIdx_x;
+  long ti = GBX + hipBlockIdx_x;
   unsigned b = grid[tk][tj][ti];
   brick("cube"+str(CUBE_STENCIL_RADIUS)+".py", VSVEC, (BDIM), (VFOLD), b);
 }
@@ -134,7 +150,7 @@ d3star_arr(bElem (*arr_in)[STRIDEY][STRIDEX], bElem (*arr_out)[STRIDEY][STRIDEX]
            //bElem *coeff) {
   long k = PADDING + GZ + hipBlockIdx_z * TILE + hipThreadIdx_z;
   long j = PADDING + GZ + hipBlockIdx_y * TILE + hipThreadIdx_y;
-  long i = PADDING + GZ + hipBlockIdx_x * TILE + hipThreadIdx_x;
+  long i = PADDINGX + GZX + hipBlockIdx_x * TILEX + hipThreadIdx_x;
   ST_STAR_ARR_GPU;
   /*
   arr_out[k][j][i] = coeff[0] * arr_in[k][j][i];
@@ -152,7 +168,7 @@ d3cube_arr(bElem (*arr_in)[STRIDEY][STRIDEX], bElem (*arr_out)[STRIDEY][STRIDEX]
            //bElem (*coeff)[8][8]) {
   long k = PADDING + GZ + hipBlockIdx_z * TILE + hipThreadIdx_z;
   long j = PADDING + GZ + hipBlockIdx_y * TILE + hipThreadIdx_y;
-  long i = PADDING + GZ + hipBlockIdx_x * TILE + hipThreadIdx_x;
+  long i = PADDINGX + GZX + hipBlockIdx_x * TILEX + hipThreadIdx_x;
   ST_CUBE_ARR_GPU;
   /*
   arr_out[k][j][i] = 0.0;
@@ -178,7 +194,7 @@ d3star_arr_codegen(bElem (*arr_in)[STRIDEY][STRIDEX], bElem (*arr_out)[STRIDEY][
                    //bElem *coeff) {
   long k = GZ + hipBlockIdx_z * TILE;
   long j = GZ + hipBlockIdx_y * TILE;
-  long i = GZ + hipBlockIdx_x * WARPSIZE;
+  long i = GZX + hipBlockIdx_x * WARPSIZE;
   tile("star"+str(STAR_STENCIL_RADIUS)+".py", VSVEC, (TILE, TILE, WARPSIZE), ("k", "j", "i"), (1, 1, WARPSIZE));
 }
 
@@ -187,7 +203,7 @@ d3cube_arr_codegen(bElem (*arr_in)[STRIDEY][STRIDEX], bElem (*arr_out)[STRIDEY][
                    //bElem (*coeff)[8][8]) {
   long k = GZ + hipBlockIdx_z * TILE;
   long j = GZ + hipBlockIdx_y * TILE;
-  long i = GZ + hipBlockIdx_x * WARPSIZE;
+  long i = GZX + hipBlockIdx_x * WARPSIZE;
   tile("cube"+str(CUBE_STENCIL_RADIUS)+".py", VSVEC, (TILE, TILE, WARPSIZE), ("k", "j", "i"), (1, 1, WARPSIZE));
 }
 
@@ -239,7 +255,7 @@ void d3_stencils_star_hip() {
     Brick<Dim<BDIM>, Dim<VFOLD>> bOut(&bInfo, bstorage, bsize);
 
     // Copy data to the bricks
-    copyToBrick<3>({STRIDEGX, STRIDEGY, STRIDEGZ}, {PADDING, PADDING, PADDING}, {0, 0, 0}, in_ptr, grid_ptr, bIn);
+    copyToBrick<3>({STRIDEGX, STRIDEGY, STRIDEGZ}, {PADDINGX, PADDING, PADDING}, {0, 0, 0}, in_ptr, grid_ptr, bIn);
     BrickStorage bstorage_dev = movBrickStorage(bstorage, hipMemcpyHostToDevice);
 
     auto arr_func_tile = [&arr_in, &arr_out]() -> void {
@@ -259,14 +275,14 @@ void d3_stencils_star_hip() {
         auto bSize = cal_size<BDIM>::value;
         Brick <Dim<BDIM>, Dim<VFOLD>> bIn(binfo_dev, bstorage_dev, 0);
         Brick <Dim<BDIM>, Dim<VFOLD>> bOut(binfo_dev, bstorage_dev, bSize);
-        dim3 block(NBX, NBY, NBZ), thread(BDIM);
+        dim3 block(NBX, NBY, NBZ), thread(TILEX,TILE,TILE);
         hipLaunchKernelGGL(d3star_brick, block, thread, 0, 0, 
             grid, bIn, bOut);
     };
     auto arr_func = [&in_dev, &out_dev]() -> void {
         bElem(*arr_in)[STRIDEY][STRIDEX] = (bElem (*)[STRIDEY][STRIDEX]) in_dev;
         bElem(*arr_out)[STRIDEY][STRIDEX] = (bElem (*)[STRIDEY][STRIDEX]) out_dev;
-        dim3 block(NBX, NBY, NBZ), thread(BDIM);
+        dim3 block(NBX, NBY, NBZ), thread(TILEX,TILE,TILE);
         hipLaunchKernelGGL(d3star_arr, block, thread, 0, 0,
             arr_in, arr_out);
     };
@@ -298,11 +314,11 @@ void d3_stencils_star_hip() {
 
     hipMemcpy(bstorage.dat.get(), bstorage_dev.dat.get(), bstorage.chunks * bstorage.step * sizeof(bElem), hipMemcpyDeviceToHost);
 
-    if (!compareBrick<3>({NX, NY, NZ}, {PADDING, PADDING, PADDING}, {GZ, GZ, GZ}, out_ptr, grid_ptr, bOut))
+    if (!compareBrick<3>({NX, NY, NZ}, {PADDINGX, PADDING, PADDING}, {GZX, GZ, GZ}, out_ptr, grid_ptr, bOut))
         throw std::runtime_error("result mismatch!");
 
     hipMemcpy(out_ptr, out_dev, bsize, hipMemcpyDeviceToHost);
-    if (!compareBrick<3>({NX, NY, NZ}, {PADDING, PADDING, PADDING}, {GZ, GZ, GZ}, out_ptr, grid_ptr, bOut))
+    if (!compareBrick<3>({NX, NY, NZ}, {PADDINGX, PADDING, PADDING}, {GZX, GZ, GZ}, out_ptr, grid_ptr, bOut))
         throw std::runtime_error("result mismatch!");
 
     free(in_ptr);
@@ -358,7 +374,7 @@ void d3_stencils_cube_hip() {
     Brick<Dim<BDIM>, Dim<VFOLD>> bOut(&bInfo, bstorage, bsize);
 
     // Copy data to the bricks
-    copyToBrick<3>({STRIDEGX, STRIDEGY, STRIDEGZ}, {PADDING, PADDING, PADDING}, {0, 0, 0}, in_ptr, grid_ptr, bIn);
+    copyToBrick<3>({STRIDEGX, STRIDEGY, STRIDEGZ}, {PADDINGX, PADDING, PADDING}, {0, 0, 0}, in_ptr, grid_ptr, bIn);
     BrickStorage bstorage_dev = movBrickStorage(bstorage, hipMemcpyHostToDevice);
 
     //auto coeff_cube = (bElem (*)[8][8]) coeff;
@@ -387,14 +403,14 @@ void d3_stencils_cube_hip() {
         auto bSize = cal_size<BDIM>::value;
         Brick <Dim<BDIM>, Dim<VFOLD>> bIn(binfo_dev, bstorage_dev, 0);
         Brick <Dim<BDIM>, Dim<VFOLD>> bOut(binfo_dev, bstorage_dev, bSize);
-        dim3 block(NBX, NBY, NBZ), thread(BDIM);
+        dim3 block(NBX, NBY, NBZ), thread(TILEX,TILE,TILE);
         hipLaunchKernelGGL(d3cube_brick, block, thread, 0, 0, 
             grid, bIn, bOut);
     };
     auto arr_func = [&in_dev, &out_dev]() -> void {
         bElem(*arr_in)[STRIDEY][STRIDEX] = (bElem (*)[STRIDEY][STRIDEX]) in_dev;
         bElem(*arr_out)[STRIDEY][STRIDEX] = (bElem (*)[STRIDEY][STRIDEX]) out_dev;
-        dim3 block(NBX, NBY, NBZ), thread(BDIM);
+        dim3 block(NBX, NBY, NBZ), thread(TILEX,TILE,TILE);
         hipLaunchKernelGGL(d3cube_arr, block, thread, 0, 0,
             arr_in, arr_out);
     };
@@ -426,11 +442,11 @@ void d3_stencils_cube_hip() {
 
     hipMemcpy(bstorage.dat.get(), bstorage_dev.dat.get(), bstorage.chunks * bstorage.step * sizeof(bElem), hipMemcpyDeviceToHost);
 
-    if (!compareBrick<3>({NX, NY, NZ}, {PADDING, PADDING, PADDING}, {GZ, GZ, GZ}, out_ptr, grid_ptr, bOut))
+    if (!compareBrick<3>({NX, NY, NZ}, {PADDINGX, PADDING, PADDING}, {GZX, GZ, GZ}, out_ptr, grid_ptr, bOut))
         throw std::runtime_error("result mismatch!");
 
     hipMemcpy(out_ptr, out_dev, bsize, hipMemcpyDeviceToHost);
-    if (!compareBrick<3>({NX, NY, NZ}, {PADDING, PADDING, PADDING}, {GZ, GZ, GZ}, out_ptr, grid_ptr, bOut))
+    if (!compareBrick<3>({NX, NY, NZ}, {PADDINGX, PADDING, PADDING}, {GZX, GZ, GZ}, out_ptr, grid_ptr, bOut))
         throw std::runtime_error("result mismatch!");
 
     free(in_ptr);
