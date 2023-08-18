@@ -79,6 +79,8 @@ for (long j = tj; j < tj + TILE; ++j) \
 _Pragma("omp simd") \
 for (long i = ti; i < ti + TILEX; ++i)
 
+#define IDENTIFY_MISMATCH 0
+
 using namespace cl::sycl;
 
 cl::sycl::device *sycl_device;
@@ -323,6 +325,7 @@ void d3_stencils_cube_sycl() {
                          bOut)) {
       std::cout << "result mismatch!" << std::endl;
       // Identify mismatch
+#ifdef IDENTIFY_MISMATCH
       for (long tk = GB; tk < STRIDEBZ - GB; ++tk)
         for (long tj = GB; tj < STRIDEBY - GB; ++tj)
           for (long ti = GBX; ti < STRIDEBX - GBX; ++ti) {
@@ -340,6 +343,7 @@ void d3_stencils_cube_sycl() {
                               << bOut[b][k][j][i] << " : " << aval <<" brick "<<ti<<" "<<tj<<" "<<tk<< std::endl;
                 }
           }
+#endif
     }
   }
 
@@ -548,6 +552,7 @@ void d3_stencils_star_sycl() {
                          bOut)) {
       std::cout << "result mismatch!" << std::endl;
       // Identify mismatch
+#ifdef IDENTIFY_MISMATCH
       for (long tk = GB; tk < STRIDEBZ - GB; ++tk)
         for (long tj = GB; tj < STRIDEBY - GB; ++tj)
           for (long ti = GBX; ti < STRIDEBX - GBX; ++ti) {
@@ -565,6 +570,7 @@ void d3_stencils_star_sycl() {
                               << bOut[b][k][j][i] << " : " << aval <<" brick "<<ti<<" "<<tj<<" "<<tk<< std::endl;
                 }
           }
+#endif
     }
   }
 

@@ -75,16 +75,6 @@ d3star_brick(unsigned (*grid)[STRIDEBY][STRIDEBX], Brick <Dim<BDIM>, Dim<VFOLD>>
   long i = threadIdx.x;
   unsigned b = grid[tk][tj][ti];
   ST_STAR_BRICK_GPU;
-  /*
-  bOut[b][k][j][i] = coeff[0] * bIn[b][k][j][i];
-  #pragma unroll
-  for (int a = 1; a <= STAR_STENCIL_RADIUS; a++) {
-      bOut[b][k][j][i] += coeff[a] * (
-          bIn[b][k][j][i + a] + bIn[b][k][j + a][i] + bIn[b][k + a][j][i] +
-          bIn[b][k][j][i - a] + bIn[b][k][j - a][i] + bIn[b][k - a][j][i]
-      );
-  }
-  */
 }
 
 __global__ void
@@ -98,20 +88,6 @@ d3cube_brick(unsigned (*grid)[STRIDEBY][STRIDEBX], Brick <Dim<BDIM>, Dim<VFOLD>>
   long i = threadIdx.x;
   unsigned b = grid[tk][tj][ti];
   ST_CUBE_BRICK_GPU;
-  /*
-  bOut[b][k][j][i] = 0.0;
-  #pragma unroll
-  for (int k_diff = -CUBE_STENCIL_RADIUS; k_diff <= CUBE_STENCIL_RADIUS; k_diff++) {
-    #pragma unroll
-    for (int j_diff = -CUBE_STENCIL_RADIUS; j_diff <= CUBE_STENCIL_RADIUS; j_diff++) {
-        #pragma unroll
-        for (int i_diff = -CUBE_STENCIL_RADIUS; i_diff <= CUBE_STENCIL_RADIUS; i_diff++) {
-            bOut[b][k][j][i] += (bIn[b][k + k_diff][j + j_diff][i + i_diff] * 
-                                 coeff[k_diff + CUBE_STENCIL_RADIUS][j_diff + CUBE_STENCIL_RADIUS][i_diff + CUBE_STENCIL_RADIUS]);
-        }
-    }
-  }
-  */
 }
 
 __global__ void
@@ -143,15 +119,6 @@ d3star_arr(bElem (*arr_in)[STRIDEY][STRIDEX], bElem (*arr_out)[STRIDEY][STRIDEX]
   long j = PADDING + GZ + blockIdx.y * TILE + threadIdx.y;
   long i = PADDINGX + GZX + blockIdx.x * TILEX + threadIdx.x;
   ST_STAR_ARR_GPU;
-  /*
-  arr_out[k][j][i] = coeff[0] * arr_in[k][j][i];
-  #pragma unroll
-  for (int a = 1; a <= STAR_STENCIL_RADIUS; a++) {
-      arr_out[k][j][i] += coeff[a] * (
-          arr_in[k][j][i + a] + arr_in[k][j + a][i] + arr_in[k + a][j][i] +
-          arr_in[k][j][i - a] + arr_in[k][j - a][i] + arr_in[k - a][j][i]);
-  }
-  */
 }
 
 __global__ void
@@ -161,20 +128,6 @@ d3cube_arr(bElem (*arr_in)[STRIDEY][STRIDEX], bElem (*arr_out)[STRIDEY][STRIDEX]
   long j = PADDING + GZ + blockIdx.y * TILE + threadIdx.y;
   long i = PADDINGX + GZX + blockIdx.x * TILEX + threadIdx.x;
   ST_CUBE_ARR_GPU;
-  /*
-  arr_out[k][j][i] = 0.0;
-  #pragma unroll
-  for (int k_diff = -CUBE_STENCIL_RADIUS; k_diff <= CUBE_STENCIL_RADIUS; k_diff++) {
-    #pragma unroll
-    for (int j_diff = -CUBE_STENCIL_RADIUS; j_diff <= CUBE_STENCIL_RADIUS; j_diff++) {
-        #pragma unroll
-        for (int i_diff = -CUBE_STENCIL_RADIUS; i_diff <= CUBE_STENCIL_RADIUS; i_diff++) {
-            arr_out[k][j][i] += (arr_in[k + k_diff][j + j_diff][i + i_diff] * 
-                                 coeff[k_diff + CUBE_STENCIL_RADIUS][j_diff + CUBE_STENCIL_RADIUS][i_diff + CUBE_STENCIL_RADIUS]);
-        }
-    }
-  }
-  */
 }
 
 #define bIn(i, j, k) arr_in[k][j][i]
@@ -222,14 +175,6 @@ void d3_stencils_star_cuda() {
     bElem(*arr_in)[STRIDEY][STRIDEX] = (bElem (*)[STRIDEY][STRIDEX]) in_ptr;
     bElem(*arr_out)[STRIDEY][STRIDEX] = (bElem (*)[STRIDEY][STRIDEX]) out_ptr;
 
-    // Copy over the coefficient array
-    //bElem *coeff_dev;
-    //{
-    //    unsigned size = COEFF_SIZE * sizeof(bElem);
-    //    cudaMalloc(&coeff_dev, size);
-    //    cudaMemcpy(coeff_dev, coeff, size, cudaMemcpyHostToDevice);
-    //}
-
     // Copy over the data array
     bElem *in_dev, *out_dev;
     {
@@ -252,14 +197,6 @@ void d3_stencils_star_cuda() {
     auto arr_func_tile = [&arr_in, &arr_out]() -> void {
         _TILEFOR{ 
           ST_STAR_CPU;
-          /*
-          arr_out[k][j][i] = coeff[0] * arr_in[k][j][i];
-          for (int a = 1; a <= STAR_STENCIL_RADIUS; a++) {
-              arr_out[k][j][i] += coeff[a] * (
-                  arr_in[k][j][i + a] + arr_in[k][j + a][i] + arr_in[k + a][j][i] +
-                  arr_in[k][j][i - a] + arr_in[k][j - a][i] + arr_in[k - a][j][i]);
-          }
-          */
         }        
     };
     auto brick_func = [&grid, &binfo_dev, &bstorage_dev]() -> void {
@@ -295,7 +232,6 @@ void d3_stencils_star_cuda() {
     arr_func_tile();
     std::cout << "Arr: " << cutime_func(arr_func) << std::endl;
     std::cout << "Arr codegen: " << cutime_func(arr_func_codegen) << std::endl;
-    std::cout << "Bri: " << cutime_func(brick_func) << std::endl;
     std::cout << "Bri codegen: " << cutime_func(brick_func_codegen) << std::endl;
     cudaDeviceSynchronize();
 
@@ -337,14 +273,6 @@ void d3_stencils_cube_cuda() {
     bElem(*arr_in)[STRIDEY][STRIDEX] = (bElem (*)[STRIDEY][STRIDEX]) in_ptr;
     bElem(*arr_out)[STRIDEY][STRIDEX] = (bElem (*)[STRIDEY][STRIDEX]) out_ptr;
 
-    // Copy over the coefficient array
-    //bElem *coeff_dev;
-    //{
-    //    unsigned size = COEFF_SIZE * sizeof(bElem);
-    //    cudaMalloc(&coeff_dev, size);
-    //    cudaMemcpy(coeff_dev, coeff, size, cudaMemcpyHostToDevice);
-    //}
-
     // Copy over the data array
     bElem *in_dev, *out_dev;
     {
@@ -364,26 +292,10 @@ void d3_stencils_cube_cuda() {
     copyToBrick<3>({STRIDEGX, STRIDEGY, STRIDEGZ}, {PADDINGX, PADDING, PADDING}, {0, 0, 0}, in_ptr, grid_ptr, bIn);
     BrickStorage bstorage_dev = movBrickStorage(bstorage, cudaMemcpyHostToDevice);
 
-    //auto coeff_cube = (bElem (*)[8][8]) coeff;
-    //auto coeff_cube_dev = (bElem (*)[8][8]) coeff_dev;
 
     auto arr_func_tile = [&arr_in, &arr_out]() -> void {
         _TILEFOR{ 
             ST_CUBE_CPU;
-            /*
-            arr_out[k][j][i] = 0.0;
-            #pragma unroll
-            for (int k_diff = -CUBE_STENCIL_RADIUS; k_diff <= CUBE_STENCIL_RADIUS; k_diff++) {
-                #pragma unroll
-                for (int j_diff = -CUBE_STENCIL_RADIUS; j_diff <= CUBE_STENCIL_RADIUS; j_diff++) {
-                    #pragma unroll
-                    for (int i_diff = -CUBE_STENCIL_RADIUS; i_diff <= CUBE_STENCIL_RADIUS; i_diff++) {		
-                        arr_out[k][j][i] += (arr_in[k + k_diff][j + j_diff][i + i_diff] * 
-                                             coeff_cube[k_diff + CUBE_STENCIL_RADIUS][j_diff + CUBE_STENCIL_RADIUS][i_diff + CUBE_STENCIL_RADIUS]);
-                    }
-                }
-            }
-            */
         }        
     };
     auto brick_func = [&grid, &binfo_dev, &bstorage_dev]() -> void {
@@ -419,7 +331,6 @@ void d3_stencils_cube_cuda() {
     arr_func_tile();
     std::cout << "Arr: " << cutime_func(arr_func) << std::endl;
     std::cout << "Arr codegen: " << cutime_func(arr_func_codegen) << std::endl;
-    std::cout << "Bri: " << cutime_func(brick_func) << std::endl;
     std::cout << "Bri codegen: " << cutime_func(brick_func_codegen) << std::endl;
     cudaDeviceSynchronize();
 

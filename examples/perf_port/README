@@ -47,7 +47,7 @@ Instructions to run on PERLMUTTER-NERSC:
 
 $ module load cmake intel-llvm
 $ mkdir build && cd build
-$ cmake -DHAS_SYCL=ON -DCODEGEN_ARCH=NVIDIA ..
+$ cmake -DHAS_SYCL=ON -DCODEGEN_ARCH=NVIDIA -DCMAKE_CXX_COMPILER=/global/common/software/nersc/pe/intel-llvm/2023-WW13/bin/clang++ ..
 $ make single-perf-sycl
 $ ./examples/perf_port/sycl -s star
 
