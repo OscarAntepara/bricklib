@@ -164,8 +164,6 @@ void d3_stencils_cube_sycl() {
 
   copyToBrick<3>({STRIDEGX, STRIDEGY, STRIDEGZ}, {PADDINGX, PADDING, PADDING}, {0, 0, 0}, in_ptr,
                  grid_ptr, bIn);
-  // Setup bricks for opencl
-  //buffer<bElem, 1> coeff_buf(coeff, range<1>(125));
 
   std::vector<unsigned> bIdx;
 
@@ -182,25 +180,10 @@ void d3_stencils_cube_sycl() {
   size_t bDat_size = bStorage.chunks * bStorage.step;
   buffer<bElem, 1> bDat_buf({range<1>(bDat_size)});
 
-  //auto coeff_cube = (bElem (*)[5][5]) coeff;
-  //auto coeff_cube_dev = (bElem (*)[8][8]) coeff_dev;
 
   auto arr_func_tile = [&arr_in, &arr_out]() -> void {
     _TILEFOR{ 
         ST_CUBE_CPU;
-        /*
-        arr_out[k][j][i] = 0.0;
-        #pragma unroll
-        for (int k_diff = -CUBE_STENCIL_RADIUS; k_diff <= CUBE_STENCIL_RADIUS; k_diff++) {
-            #pragma unroll
-            for (int j_diff = -CUBE_STENCIL_RADIUS; j_diff <= CUBE_STENCIL_RADIUS; j_diff++) {
-                #pragma unroll
-                for (int i_diff = -CUBE_STENCIL_RADIUS; i_diff <= CUBE_STENCIL_RADIUS; i_diff++) {		
-                    arr_out[k][j][i] += (arr_in[k + k_diff][j + j_diff][i + i_diff] * 
-                                          coeff_cube[k_diff + CUBE_STENCIL_RADIUS][j_diff + CUBE_STENCIL_RADIUS][i_diff + CUBE_STENCIL_RADIUS]);
-                }
-            }
-        }*/
     }  
   };
 
@@ -211,10 +194,8 @@ void d3_stencils_cube_sycl() {
 
   buffer<bElem, 3> arr_in_buf({range<3>(STRIDEZ, STRIDEY, STRIDEX)});
   buffer<bElem, 3> arr_out_buf({range<3>(STRIDEZ, STRIDEY, STRIDEX)});
-  //buffer<bElem, 3> coeff_cube_buf({range<3>(5, 5, 5)});
 
   auto arr_func = [&](handler &cgh) {
-    //auto coeff = coeff_cube_buf.get_access<access::mode::read>(cgh);
     auto arr_in = arr_in_buf.get_access<access::mode::read>(cgh);
     auto arr_out = arr_out_buf.get_access<access::mode::write>(cgh);
 
@@ -225,20 +206,6 @@ void d3_stencils_cube_sycl() {
       auto k = WIid.get_global_id(2) + GZ + PADDING;
 
       ST_CUBE_ARR_GPU;
-      /*
-      arr_out[k][j][i] = 0.0;
-      #pragma unroll
-      for (int k_diff = -CUBE_STENCIL_RADIUS; k_diff <= CUBE_STENCIL_RADIUS; k_diff++) {
-        #pragma unroll
-        for (int j_diff = -CUBE_STENCIL_RADIUS; j_diff <= CUBE_STENCIL_RADIUS; j_diff++) {
-            #pragma unroll
-            for (int i_diff = -CUBE_STENCIL_RADIUS; i_diff <= CUBE_STENCIL_RADIUS; i_diff++) {
-                arr_out[k][j][i] += (arr_in[k + k_diff][j + j_diff][i + i_diff] * 
-                                    coeff[k_diff + CUBE_STENCIL_RADIUS][j_diff + CUBE_STENCIL_RADIUS][i_diff + CUBE_STENCIL_RADIUS]);
-            }
-        }
-      }
-      */
     });
   };
 
@@ -246,7 +213,6 @@ void d3_stencils_cube_sycl() {
 #define bOut(i, j, k) arr_out[k][j][i]
 
   auto arr_func_codegen = [&](handler &cgh) {
-    //auto coeff = coeff_cube_buf.get_access<access::mode::read>(cgh);
     auto arr_in = arr_in_buf.get_access<access::mode::read>(cgh);
     auto arr_out = arr_out_buf.get_access<access::mode::write>(cgh);
 
@@ -274,10 +240,6 @@ void d3_stencils_cube_sycl() {
       cgh.copy(in_ptr, arr_in);
     });
     squeue.wait();
-    //squeue.submit([&](cl::sycl::handler &cgh) {
-    //  auto coeff_cube = coeff_cube_buf.get_access<cl::sycl::access::mode::discard_write>(cgh);
-    //  cgh.copy(coeff, coeff_cube);
-    //});
   }
 
   {
@@ -289,7 +251,6 @@ void d3_stencils_cube_sycl() {
   auto brick_func = [&](handler &cgh) {
     auto bDat_s = bDat_buf.get_access<access::mode::read_write>(cgh);
     auto adj_s = adj_buf.get_access<access::mode::read_write>(cgh);
-    //auto coeff = coeff_cube_buf.get_access<access::mode::read>(cgh);
     auto bIdx_s = bIdx_buf.get_access<access::mode::read>(cgh);
     auto len = bIdx.size();
     auto bInfo_s = bInfo_buf.get_access<access::mode::read>(cgh);
@@ -312,27 +273,12 @@ void d3_stencils_cube_sycl() {
       unsigned b = bIdx_s[bi + (bj + bk * (STRIDEBY-2)) * (STRIDEBX-2)];
 
       ST_CUBE_BRICK_GPU;
-      /*
-      bOut[b][k][j][i] = 0.0;
-      #pragma unroll
-      for (int k_diff = -CUBE_STENCIL_RADIUS; k_diff <= CUBE_STENCIL_RADIUS; k_diff++) {
-        #pragma unroll
-        for (int j_diff = -CUBE_STENCIL_RADIUS; j_diff <= CUBE_STENCIL_RADIUS; j_diff++) {
-            #pragma unroll
-            for (int i_diff = -CUBE_STENCIL_RADIUS; i_diff <= CUBE_STENCIL_RADIUS; i_diff++) {
-                bOut[b][k][j][i] += (bIn[b][k + k_diff][j + j_diff][i + i_diff] * 
-                                    coeff[k_diff + CUBE_STENCIL_RADIUS][j_diff + CUBE_STENCIL_RADIUS][i_diff + CUBE_STENCIL_RADIUS]);
-            }
-        }
-      }
-      */
     });
   };
 
   auto brick_func_codegen = [&](handler &cgh) {
     auto bDat_s = bDat_buf.get_access<access::mode::read_write>(cgh);
     auto adj_s = adj_buf.get_access<access::mode::read_write>(cgh);
-    //auto coeff = coeff_buf.get_access<access::mode::read>(cgh);
     auto bIdx_s = bIdx_buf.get_access<access::mode::read>(cgh);
     auto len = bIdx.size();
 
@@ -360,7 +306,6 @@ void d3_stencils_cube_sycl() {
   }
 
   {
-    std::cout << "Brick sycl: " << sycl_time_func(squeue, brick_func) << std::endl;
     std::cout << "Brick codegen sycl: " << sycl_time_func(squeue, brick_func_codegen) << std::endl;
   }
 
@@ -448,8 +393,6 @@ void d3_stencils_star_sycl() {
 
   copyToBrick<3>({STRIDEGX, STRIDEGY, STRIDEGZ}, {PADDINGX, PADDING, PADDING}, {0, 0, 0}, in_ptr,
                  grid_ptr, bIn);
-  // Setup bricks for opencl
-  //buffer<bElem, 1> coeff_buf(coeff, range<1>(129));
 
   std::vector<unsigned> bIdx;
 
@@ -469,14 +412,6 @@ void d3_stencils_star_sycl() {
   auto arr_func_tile = [&arr_in, &arr_out]() -> void {
     _TILEFOR{
       ST_STAR_CPU;
-      /* 
-      arr_out[k][j][i] = coeff[0] * arr_in[k][j][i];
-      for (int a = 1; a <= STAR_STENCIL_RADIUS; a++) {
-          arr_out[k][j][i] += coeff[a] * (
-              arr_in[k][j][i + a] + arr_in[k][j + a][i] + arr_in[k + a][j][i] +
-              arr_in[k][j][i - a] + arr_in[k][j - a][i] + arr_in[k - a][j][i]);
-      }
-      */
     }  
   };
 
@@ -489,7 +424,6 @@ void d3_stencils_star_sycl() {
   buffer<bElem, 3> arr_out_buf({range<3>(STRIDEZ, STRIDEY, STRIDEX)});
 
   auto arr_func = [&](handler &cgh) {
-    //auto coeff = coeff_buf.get_access<access::mode::read>(cgh);
     auto arr_in = arr_in_buf.get_access<access::mode::read>(cgh);
     auto arr_out = arr_out_buf.get_access<access::mode::write>(cgh);
 
@@ -499,15 +433,6 @@ void d3_stencils_star_sycl() {
       auto j = WIid.get_global_id(1) + GZ + PADDING;
       auto k = WIid.get_global_id(2) + GZ + PADDING;
       ST_STAR_ARR_GPU;
-      /*
-      arr_out[k][j][i] = coeff[0] * arr_in[k][j][i];
-      #pragma unroll
-      for (int a = 1; a <= STAR_STENCIL_RADIUS; a++) {
-          arr_out[k][j][i] += coeff[a] * (
-              arr_in[k][j][i + a] + arr_in[k][j + a][i] + arr_in[k + a][j][i] +
-              arr_in[k][j][i - a] + arr_in[k][j - a][i] + arr_in[k - a][j][i]);
-      }
-      */
     });
   };
 
@@ -515,7 +440,6 @@ void d3_stencils_star_sycl() {
 #define bOut(i, j, k) arr_out[k][j][i]
 
   auto arr_func_codegen = [&](handler &cgh) {
-    //auto coeff = coeff_buf.get_access<access::mode::read>(cgh);
     auto arr_in = arr_in_buf.get_access<access::mode::read>(cgh);
     auto arr_out = arr_out_buf.get_access<access::mode::write>(cgh);
 
@@ -553,7 +477,6 @@ void d3_stencils_star_sycl() {
   auto brick_func = [&](handler &cgh) {
     auto bDat_s = bDat_buf.get_access<access::mode::read_write>(cgh);
     auto adj_s = adj_buf.get_access<access::mode::read_write>(cgh);
-    //auto coeff = coeff_buf.get_access<access::mode::read>(cgh);
     auto bIdx_s = bIdx_buf.get_access<access::mode::read>(cgh);
     auto len = bIdx.size();
     auto bInfo_s = bInfo_buf.get_access<access::mode::read>(cgh);
@@ -575,23 +498,12 @@ void d3_stencils_star_sycl() {
 
       unsigned b = bIdx_s[bi + (bj + bk * (STRIDEBY-2)) * (STRIDEBX-2)];
       ST_STAR_BRICK_GPU;
-      /*
-      bOut[b][k][j][i] = coeff[0] * bIn[b][k][j][i];
-      #pragma unroll
-      for (int a = 1; a <= STAR_STENCIL_RADIUS; a++) {
-          bOut[b][k][j][i] += coeff[a] * (
-              bIn[b][k][j][i + a] + bIn[b][k][j + a][i] + bIn[b][k + a][j][i] +
-              bIn[b][k][j][i - a] + bIn[b][k][j - a][i] + bIn[b][k - a][j][i]
-          );
-      }
-      */
     });
   };
 
   auto brick_func_codegen = [&](handler &cgh) {
     auto bDat_s = bDat_buf.get_access<access::mode::read_write>(cgh);
     auto adj_s = adj_buf.get_access<access::mode::read_write>(cgh);
-    //auto coeff = coeff_buf.get_access<access::mode::read>(cgh);
     auto bIdx_s = bIdx_buf.get_access<access::mode::read>(cgh);
     auto len = bIdx.size();
 
@@ -619,7 +531,6 @@ void d3_stencils_star_sycl() {
   }
 
   {
-    std::cout << "Brick sycl: " << sycl_time_func(squeue, brick_func) << std::endl;
     std::cout << "Brick codegen sycl: " << sycl_time_func(squeue, brick_func_codegen) << std::endl;
   }
 

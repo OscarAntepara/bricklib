@@ -21,7 +21,7 @@ Instructions to run on CRUSHER-OLCF:
 
 -Running with SYCL:
 
-$ module load cmake dpcpp/22.09
+$ module load cmake dpcpp/22.09 rocm
 $ mkdir build && cd build
 $ cmake -DHAS_SYCL=ON -DCODEGEN_ARCH=AMD -DOpenMP_CXX_FLAGS="-fopenmp" -DOpenMP_CXX_LIB_NAMES="libiomp" -DOpenMP_libiomp_LIBRARY=sw/crusher/dpcpp/22.09/lib/ ..
 $ make single-perf-sycl
