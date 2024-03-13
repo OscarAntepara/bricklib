@@ -30,7 +30,7 @@ if(CMAKE_CUDA_COMPILER)
     VSTARGET(C3MPI main.cu main-out.cu)
     add_executable(weak-cuda ${VSTARGET_C3MPI_OUTPUT} args.cpp)
     target_compile_definitions(weak-cuda PRIVATE DECOMP_PAGEUNALIGN)
-    target_link_libraries(weak-cuda brick brick-mpi brickhelper ${MPI_CXX_LIBRARIES} ${LIBRT} /opt/cray/pe/mpich/8.1.25/gtl/lib/libmpi_gtl_cuda.so)
+    target_link_libraries(weak-cuda brick brick-mpi brickhelper ${MPI_CXX_LIBRARIES} ${LIBRT} /opt/cray/pe/mpich/8.1.28/gtl/lib/libmpi_gtl_cuda.so /usr/lib64/libgdrapi.so)
     set_target_properties(weak-cuda
             PROPERTIES OUTPUT_NAME cuda)
 

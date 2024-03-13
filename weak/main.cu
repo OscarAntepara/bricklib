@@ -136,7 +136,7 @@ int main(int argc, char **argv) {
 
     size_t tsize = 0;
     for (auto &g : bDecomp.ghost)
-      tsize += g.len * bStorage.step * sizeof(bElem) * 2;
+      tsize += g.len * bStorage.step * sizeof(bElem);
 
     std::unordered_map<uint64_t, MPI_Datatype> stypemap;
     std::unordered_map<uint64_t, MPI_Datatype> rtypemap;
@@ -314,8 +314,8 @@ int main(int argc, char **argv) {
         std::cout << "call " << call_s << std::endl;
         std::cout << "wait " << wait_s << std::endl;
         std::cout << "total MPI exchange " << total_exch_s << std::endl;
-        //std::cout << "  | MPI size (MB): " << size_s << std::endl;
-        //std::cout << "  | MPI speed (GB/s): " << mspd_s << std::endl;
+        std::cout << "  | MPI size (MB): " << size_s << std::endl;
+        std::cout << "  | MPI speed (GB/s): " << mspd_s << std::endl;
 
         double perf = (double)tot_elems * 1.0e-9;
         perf = perf / total;
