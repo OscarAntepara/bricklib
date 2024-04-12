@@ -50,9 +50,9 @@ if (BRICK_USE_MEMFD)
     add_compile_definitions(USE_MEMFD)
 endif ()
 
-option(BRICK_CUDA_AWARE "Use CUDA_AWARE communication" OFF)
-if (BRICK_CUDA_AWARE)
-    add_compile_definitions(CUDA_AWARE)
+option(BRICK_GPU_AWARE "Use GPU_AWARE communication" OFF)
+if (BRICK_GPU_AWARE)
+    add_compile_definitions(GPU_AWARE)
 endif ()
 
 option(BRICK_USE_TYPES "Use MPI_TYPES" OFF)
@@ -68,18 +68,6 @@ endif ()
 option(BRICK_BUILD_TEST "Include various tests as build target" ON)
 
 option(HAS_HMM "Use ATS/HMM for CUDA (not-used)" OFF)
-
-set(STENCIL_RADIUS "1" CACHE STRING "Stencil radius used for performance experiments")
-set_property(CACHE STENCIL_RADIUS PROPERTY STRINGS "1" "2" "3" "4")
-if (STENCIL_RADIUS)
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DSTENCIL_RADIUS_${STENCIL_RADIUS}")
-endif()
-
-set(CODEGEN_ARCH "NVIDIA" CACHE STRING "Codegen arch used for performance experiments")
-set_property(CACHE CODEGEN_ARCH PROPERTY STRINGS "NVIDIA" "AMD" "INTEL")
-if (CODEGEN_ARCH)
-    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -DCODEGEN_ARCH_${CODEGEN_ARCH}")
-endif()
 
 # MacOS doesn't have librt
 # shm_open is recommended to link with -lrt (man page)
@@ -151,6 +139,7 @@ if (BRICK_BUILD_TEST)
     if (MPI_FOUND)
         add_subdirectory(weak)
         add_subdirectory(strong)
+        add_subdirectory(examples/gmg/nvidia_cuda)
     endif()
 endif ()
 

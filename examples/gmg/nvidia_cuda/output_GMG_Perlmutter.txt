@@ -1,0 +1,370 @@
+Pagesize 4096; MPI Size 8 * OpenMP threads 1
+Domain size of 1073741824 split among
+A total of 8 processes 2x2x2
+Running with MPI_GPU_AWARE = 1
+Warm up runs
+Test # 1
+max resGPU 3.97276695e+00 iter 1 
+max resGPU 1.11464192e-01 iter 2 
+max resGPU 1.92360620e-02 iter 3 
+max resGPU 1.32748182e-03 iter 4 
+max resGPU 1.64498222e-04 iter 5 
+max resGPU 1.55719946e-05 iter 6 
+max resGPU 1.70348565e-06 iter 7 
+max resGPU 1.75871800e-07 iter 8 
+max resGPU 1.88153176e-08 iter 9 
+max resGPU 1.99187500e-09 iter 10 
+max resGPU 2.13877194e-10 iter 11 
+max resGPU 2.37284636e-11 iter 12 
+========================= 
+Test # 2
+max resGPU 3.97276695e+00 iter 1 
+max resGPU 1.11464192e-01 iter 2 
+max resGPU 1.92360620e-02 iter 3 
+max resGPU 1.32748182e-03 iter 4 
+max resGPU 1.64498222e-04 iter 5 
+max resGPU 1.55719946e-05 iter 6 
+max resGPU 1.70348565e-06 iter 7 
+max resGPU 1.75871800e-07 iter 8 
+max resGPU 1.88153176e-08 iter 9 
+max resGPU 1.99187500e-09 iter 10 
+max resGPU 2.13877194e-10 iter 11 
+max resGPU 2.37284636e-11 iter 12 
+========================= 
+Test # 3
+max resGPU 3.97276695e+00 iter 1 
+max resGPU 1.11464192e-01 iter 2 
+max resGPU 1.92360620e-02 iter 3 
+max resGPU 1.32748182e-03 iter 4 
+max resGPU 1.64498222e-04 iter 5 
+max resGPU 1.55719946e-05 iter 6 
+max resGPU 1.70348565e-06 iter 7 
+max resGPU 1.75871800e-07 iter 8 
+max resGPU 1.88153176e-08 iter 9 
+max resGPU 1.99187500e-09 iter 10 
+max resGPU 2.13877194e-10 iter 11 
+max resGPU 2.37284636e-11 iter 12 
+========================= 
+Test # 4
+max resGPU 3.97276695e+00 iter 1 
+max resGPU 1.11464192e-01 iter 2 
+max resGPU 1.92360620e-02 iter 3 
+max resGPU 1.32748182e-03 iter 4 
+max resGPU 1.64498222e-04 iter 5 
+max resGPU 1.55719946e-05 iter 6 
+max resGPU 1.70348565e-06 iter 7 
+max resGPU 1.75871800e-07 iter 8 
+max resGPU 1.88153176e-08 iter 9 
+max resGPU 1.99187500e-09 iter 10 
+max resGPU 2.13877194e-10 iter 11 
+max resGPU 2.37284636e-11 iter 12 
+========================= 
+Test # 5
+max resGPU 3.97276695e+00 iter 1 
+max resGPU 1.11464192e-01 iter 2 
+max resGPU 1.92360620e-02 iter 3 
+max resGPU 1.32748182e-03 iter 4 
+max resGPU 1.64498222e-04 iter 5 
+max resGPU 1.55719946e-05 iter 6 
+max resGPU 1.70348565e-06 iter 7 
+max resGPU 1.75871800e-07 iter 8 
+max resGPU 1.88153176e-08 iter 9 
+max resGPU 1.99187500e-09 iter 10 
+max resGPU 2.13877194e-10 iter 11 
+max resGPU 2.37284636e-11 iter 12 
+========================= 
+Test # 6
+max resGPU 3.97276695e+00 iter 1 
+max resGPU 1.11464192e-01 iter 2 
+max resGPU 1.92360620e-02 iter 3 
+max resGPU 1.32748182e-03 iter 4 
+max resGPU 1.64498222e-04 iter 5 
+max resGPU 1.55719946e-05 iter 6 
+max resGPU 1.70348565e-06 iter 7 
+max resGPU 1.75871800e-07 iter 8 
+max resGPU 1.88153176e-08 iter 9 
+max resGPU 1.99187500e-09 iter 10 
+max resGPU 2.13877194e-10 iter 11 
+max resGPU 2.37284636e-11 iter 12 
+========================= 
+Test # 7
+max resGPU 3.97276695e+00 iter 1 
+max resGPU 1.11464192e-01 iter 2 
+max resGPU 1.92360620e-02 iter 3 
+max resGPU 1.32748182e-03 iter 4 
+max resGPU 1.64498222e-04 iter 5 
+max resGPU 1.55719946e-05 iter 6 
+max resGPU 1.70348565e-06 iter 7 
+max resGPU 1.75871800e-07 iter 8 
+max resGPU 1.88153176e-08 iter 9 
+max resGPU 1.99187500e-09 iter 10 
+max resGPU 2.13877194e-10 iter 11 
+max resGPU 2.37284636e-11 iter 12 
+========================= 
+Test # 8
+max resGPU 3.97276695e+00 iter 1 
+max resGPU 1.11464192e-01 iter 2 
+max resGPU 1.92360620e-02 iter 3 
+max resGPU 1.32748182e-03 iter 4 
+max resGPU 1.64498222e-04 iter 5 
+max resGPU 1.55719946e-05 iter 6 
+max resGPU 1.70348565e-06 iter 7 
+max resGPU 1.75871800e-07 iter 8 
+max resGPU 1.88153176e-08 iter 9 
+max resGPU 1.99187500e-09 iter 10 
+max resGPU 2.13877194e-10 iter 11 
+max resGPU 2.37284636e-11 iter 12 
+========================= 
+Test # 9
+max resGPU 3.97276695e+00 iter 1 
+max resGPU 1.11464192e-01 iter 2 
+max resGPU 1.92360620e-02 iter 3 
+max resGPU 1.32748182e-03 iter 4 
+max resGPU 1.64498222e-04 iter 5 
+max resGPU 1.55719946e-05 iter 6 
+max resGPU 1.70348565e-06 iter 7 
+max resGPU 1.75871800e-07 iter 8 
+max resGPU 1.88153176e-08 iter 9 
+max resGPU 1.99187500e-09 iter 10 
+max resGPU 2.13877194e-10 iter 11 
+max resGPU 2.37284636e-11 iter 12 
+========================= 
+Test # 10
+max resGPU 3.97276695e+00 iter 1 
+max resGPU 1.11464192e-01 iter 2 
+max resGPU 1.92360620e-02 iter 3 
+max resGPU 1.32748182e-03 iter 4 
+max resGPU 1.64498222e-04 iter 5 
+max resGPU 1.55719946e-05 iter 6 
+max resGPU 1.70348565e-06 iter 7 
+max resGPU 1.75871800e-07 iter 8 
+max resGPU 1.88153176e-08 iter 9 
+max resGPU 1.99187500e-09 iter 10 
+max resGPU 2.13877194e-10 iter 11 
+max resGPU 2.37284636e-11 iter 12 
+========================= 
+
+Running solver 10 times for statistics
+
+Test # 1
+max resGPU 3.97276695e+00 iter 1 
+max resGPU 1.11464192e-01 iter 2 
+max resGPU 1.92360620e-02 iter 3 
+max resGPU 1.32748182e-03 iter 4 
+max resGPU 1.64498222e-04 iter 5 
+max resGPU 1.55719946e-05 iter 6 
+max resGPU 1.70348565e-06 iter 7 
+max resGPU 1.75871800e-07 iter 8 
+max resGPU 1.88153176e-08 iter 9 
+max resGPU 1.99187500e-09 iter 10 
+max resGPU 2.13877194e-10 iter 11 
+max resGPU 2.37284636e-11 iter 12 
+========================= 
+Test # 2
+max resGPU 3.97276695e+00 iter 1 
+max resGPU 1.11464192e-01 iter 2 
+max resGPU 1.92360620e-02 iter 3 
+max resGPU 1.32748182e-03 iter 4 
+max resGPU 1.64498222e-04 iter 5 
+max resGPU 1.55719946e-05 iter 6 
+max resGPU 1.70348565e-06 iter 7 
+max resGPU 1.75871800e-07 iter 8 
+max resGPU 1.88153176e-08 iter 9 
+max resGPU 1.99187500e-09 iter 10 
+max resGPU 2.13877194e-10 iter 11 
+max resGPU 2.37284636e-11 iter 12 
+========================= 
+Test # 3
+max resGPU 3.97276695e+00 iter 1 
+max resGPU 1.11464192e-01 iter 2 
+max resGPU 1.92360620e-02 iter 3 
+max resGPU 1.32748182e-03 iter 4 
+max resGPU 1.64498222e-04 iter 5 
+max resGPU 1.55719946e-05 iter 6 
+max resGPU 1.70348565e-06 iter 7 
+max resGPU 1.75871800e-07 iter 8 
+max resGPU 1.88153176e-08 iter 9 
+max resGPU 1.99187500e-09 iter 10 
+max resGPU 2.13877194e-10 iter 11 
+max resGPU 2.37284636e-11 iter 12 
+========================= 
+Test # 4
+max resGPU 3.97276695e+00 iter 1 
+max resGPU 1.11464192e-01 iter 2 
+max resGPU 1.92360620e-02 iter 3 
+max resGPU 1.32748182e-03 iter 4 
+max resGPU 1.64498222e-04 iter 5 
+max resGPU 1.55719946e-05 iter 6 
+max resGPU 1.70348565e-06 iter 7 
+max resGPU 1.75871800e-07 iter 8 
+max resGPU 1.88153176e-08 iter 9 
+max resGPU 1.99187500e-09 iter 10 
+max resGPU 2.13877194e-10 iter 11 
+max resGPU 2.37284636e-11 iter 12 
+========================= 
+Test # 5
+max resGPU 3.97276695e+00 iter 1 
+max resGPU 1.11464192e-01 iter 2 
+max resGPU 1.92360620e-02 iter 3 
+max resGPU 1.32748182e-03 iter 4 
+max resGPU 1.64498222e-04 iter 5 
+max resGPU 1.55719946e-05 iter 6 
+max resGPU 1.70348565e-06 iter 7 
+max resGPU 1.75871800e-07 iter 8 
+max resGPU 1.88153176e-08 iter 9 
+max resGPU 1.99187500e-09 iter 10 
+max resGPU 2.13877194e-10 iter 11 
+max resGPU 2.37284636e-11 iter 12 
+========================= 
+Test # 6
+max resGPU 3.97276695e+00 iter 1 
+max resGPU 1.11464192e-01 iter 2 
+max resGPU 1.92360620e-02 iter 3 
+max resGPU 1.32748182e-03 iter 4 
+max resGPU 1.64498222e-04 iter 5 
+max resGPU 1.55719946e-05 iter 6 
+max resGPU 1.70348565e-06 iter 7 
+max resGPU 1.75871800e-07 iter 8 
+max resGPU 1.88153176e-08 iter 9 
+max resGPU 1.99187500e-09 iter 10 
+max resGPU 2.13877194e-10 iter 11 
+max resGPU 2.37284636e-11 iter 12 
+========================= 
+Test # 7
+max resGPU 3.97276695e+00 iter 1 
+max resGPU 1.11464192e-01 iter 2 
+max resGPU 1.92360620e-02 iter 3 
+max resGPU 1.32748182e-03 iter 4 
+max resGPU 1.64498222e-04 iter 5 
+max resGPU 1.55719946e-05 iter 6 
+max resGPU 1.70348565e-06 iter 7 
+max resGPU 1.75871800e-07 iter 8 
+max resGPU 1.88153176e-08 iter 9 
+max resGPU 1.99187500e-09 iter 10 
+max resGPU 2.13877194e-10 iter 11 
+max resGPU 2.37284636e-11 iter 12 
+========================= 
+Test # 8
+max resGPU 3.97276695e+00 iter 1 
+max resGPU 1.11464192e-01 iter 2 
+max resGPU 1.92360620e-02 iter 3 
+max resGPU 1.32748182e-03 iter 4 
+max resGPU 1.64498222e-04 iter 5 
+max resGPU 1.55719946e-05 iter 6 
+max resGPU 1.70348565e-06 iter 7 
+max resGPU 1.75871800e-07 iter 8 
+max resGPU 1.88153176e-08 iter 9 
+max resGPU 1.99187500e-09 iter 10 
+max resGPU 2.13877194e-10 iter 11 
+max resGPU 2.37284636e-11 iter 12 
+========================= 
+Test # 9
+max resGPU 3.97276695e+00 iter 1 
+max resGPU 1.11464192e-01 iter 2 
+max resGPU 1.92360620e-02 iter 3 
+max resGPU 1.32748182e-03 iter 4 
+max resGPU 1.64498222e-04 iter 5 
+max resGPU 1.55719946e-05 iter 6 
+max resGPU 1.70348565e-06 iter 7 
+max resGPU 1.75871800e-07 iter 8 
+max resGPU 1.88153176e-08 iter 9 
+max resGPU 1.99187500e-09 iter 10 
+max resGPU 2.13877194e-10 iter 11 
+max resGPU 2.37284636e-11 iter 12 
+========================= 
+Test # 10
+max resGPU 3.97276695e+00 iter 1 
+max resGPU 1.11464192e-01 iter 2 
+max resGPU 1.92360620e-02 iter 3 
+max resGPU 1.32748182e-03 iter 4 
+max resGPU 1.64498222e-04 iter 5 
+max resGPU 1.55719946e-05 iter 6 
+max resGPU 1.70348565e-06 iter 7 
+max resGPU 1.75871800e-07 iter 8 
+max resGPU 1.88153176e-08 iter 9 
+max resGPU 1.99187500e-09 iter 10 
+max resGPU 2.13877194e-10 iter 11 
+max resGPU 2.37284636e-11 iter 12 
+========================= 
+Total Time per operation and level [min,avg,max] (stdev)
+level 0 smooth+residual [0.531441, 0.531499, 0.531564] (σ: 3.79338e-05)
+level 1 smooth+residual [0.0742903, 0.074305, 0.0743215] (σ: 1.02838e-05)
+level 2 smooth+residual [0.0123612, 0.0123752, 0.0123835] (σ: 6.92608e-06)
+level 3 smooth+residual [0.00154348, 0.00154869, 0.00155863] (σ: 5.12889e-06)
+level 4 smooth+residual [0.00102225, 0.00102973, 0.00104467] (σ: 6.78202e-06)
+level 5 smooth+residual [0.000898026, 0.000905166, 0.000919757] (σ: 7.20049e-06)
+level 6 smooth+residual [0.00727152, 0.00733525, 0.00740177] (σ: 4.7471e-05)
+Total smooth+residual 0.628998
+level 0 applyOp [0.265012, 0.265184, 0.265346] (σ: 9.20184e-05)
+level 1 applyOp [0.0367703, 0.0368348, 0.0369605] (σ: 5.98479e-05)
+level 2 applyOp [0.00619495, 0.00621257, 0.00623455] (σ: 1.41752e-05)
+level 3 applyOp [0.00172099, 0.00173146, 0.00174874] (σ: 1.1074e-05)
+level 4 applyOp [0.00139952, 0.00140673, 0.00141713] (σ: 5.72377e-06)
+level 5 applyOp [0.00133162, 0.00135916, 0.00136989] (σ: 1.27824e-05)
+level 6 applyOp [0.0110012, 0.0111134, 0.0112801] (σ: 9.67875e-05)
+Total applyOp 0.323842
+level 0 restriction [0.0109753, 0.0109785, 0.0109805] (σ: 1.69322e-06)
+level 1 restriction [0.00154093, 0.00154172, 0.00154336] (σ: 7.99585e-07)
+level 2 restriction [0.000300886, 0.000301939, 0.000303418] (σ: 1.2066e-06)
+level 3 restriction [9.98624e-05, 0.000101102, 0.000101754] (σ: 6.15546e-07)
+level 4 restriction [8.81216e-05, 8.8814e-05, 8.93248e-05] (σ: 4.15159e-07)
+level 5 restriction [8.32448e-05, 8.6214e-05, 8.9632e-05] (σ: 2.83034e-06)
+level 6 restriction [0, 0, 0] (σ: 0)
+Total restriction 0.0130983
+level 0 interpolation+incr [0, 0, 0] (σ: 0)
+level 1 interpolation+incr [0.0205651, 0.0205684, 0.0205723] (σ: 2.41714e-06)
+level 2 interpolation+incr [0.00264199, 0.00264396, 0.00264566] (σ: 1.24083e-06)
+level 3 interpolation+incr [0.000436445, 0.000441854, 0.000452758] (σ: 5.98128e-06)
+level 4 interpolation+incr [0.000152173, 0.000153264, 0.00015415] (σ: 6.24922e-07)
+level 5 interpolation+incr [0.000112877, 0.000114101, 0.000115446] (σ: 8.30421e-07)
+level 6 interpolation+incr [0.000107946, 0.000109816, 0.000111744] (σ: 1.26859e-06)
+Total interpolation+incr 0.0240314
+level 0 exchange [0.187244, 0.198119, 0.208097] (σ: 0.00860776)
+level 1 exchange [0.0720584, 0.0843748, 0.0948674] (σ: 0.00913601)
+level 2 exchange [0.019694, 0.0215884, 0.0244737] (σ: 0.00166745)
+level 3 exchange [0.00514805, 0.00553536, 0.0063833] (σ: 0.000388384)
+level 4 exchange [0.00269005, 0.00298152, 0.00313623] (σ: 0.000128968)
+level 5 exchange [0.00250745, 0.00252501, 0.00254738] (σ: 1.14117e-05)
+level 6 exchange [0.011069, 0.0118245, 0.0125543] (σ: 0.000517856)
+Total exchange 0.326948
+maxNormRes [0.0515535, 0.0560438, 0.0714683] (σ: 0.00686828)
+======================== 
+Timings per invocation 
+level 0 smooth+residual - time per inv: 0.00369096
+level 0 applyOp - time per inv: 0.00184155
+level 0 restriction - time per inv: 0.000914874
+level 0 interpolation+incr - time per inv: -nan
+level 0 exchange - time per inv: 0.00825495
+level 1 smooth+residual - time per inv: 0.000516007
+level 1 applyOp - time per inv: 0.000255797
+level 1 restriction - time per inv: 0.000128477
+level 1 interpolation+incr - time per inv: 0.00171404
+level 1 exchange - time per inv: 0.00234374
+level 2 smooth+residual - time per inv: 8.5939e-05
+level 2 applyOp - time per inv: 4.31429e-05
+level 2 restriction - time per inv: 2.51616e-05
+level 2 interpolation+incr - time per inv: 0.00022033
+level 2 exchange - time per inv: 0.000599678
+level 3 smooth+residual - time per inv: 1.07548e-05
+level 3 applyOp - time per inv: 1.2024e-05
+level 3 restriction - time per inv: 8.42517e-06
+level 3 interpolation+incr - time per inv: 3.68211e-05
+level 3 exchange - time per inv: 0.00015376
+level 4 smooth+residual - time per inv: 7.15092e-06
+level 4 applyOp - time per inv: 9.76894e-06
+level 4 restriction - time per inv: 7.40117e-06
+level 4 interpolation+incr - time per inv: 1.2772e-05
+level 4 exchange - time per inv: 8.28199e-05
+level 5 smooth+residual - time per inv: 6.28587e-06
+level 5 applyOp - time per inv: 9.43863e-06
+level 5 restriction - time per inv: 7.1845e-06
+level 5 interpolation+incr - time per inv: 9.5084e-06
+level 5 exchange - time per inv: 7.01391e-05
+level 6 smooth+residual - time per inv: 6.11271e-06
+level 6 applyOp - time per inv: 9.26118e-06
+level 6 restriction - time per inv: -nan
+level 6 interpolation+incr - time per inv: 9.1513e-06
+level 6 exchange - time per inv: 6.15861e-05
+======================== 
+Bricks-GMG Total Time: 1.37296
+Perf 0.782063 GStencil/s

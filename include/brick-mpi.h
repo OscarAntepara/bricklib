@@ -6,19 +6,19 @@
 #ifndef BRICK_BRICK_MPI_H
 #define BRICK_BRICK_MPI_H
 
-#include <vector>
-#include <unordered_map>
+#include "bitset.h"
+#include "brick.h"
+#include "memfd.h"
 #include <algorithm>
 #include <cassert>
-#include <cstring>
 #include <cmath>
+#include <cstring>
 #include <iostream>
 #include <mpi.h>
 #include <omp.h>
 #include <unistd.h>
-#include "brick.h"
-#include "bitset.h"
-#include "memfd.h"
+#include <unordered_map>
+#include <vector>
 
 extern double packtime, calltime, waittime, movetime, calctime;
 
@@ -39,30 +39,24 @@ void allneighbors(BitSet cur, long idx, long dim, std::vector<BitSet> &neighbors
  * @{
  */
 
-
 /**
  * @brief Generic base template for @ref grid_access
  * @tparam T type of the BrickDecomp
  * @tparam dim number of dimensions
  * @tparam d current dimension
  */
-template<typename T, unsigned dim, unsigned d>
-struct grid_access;
+template <typename T, unsigned dim, unsigned d> struct grid_access;
 
-template<typename T, unsigned dim>
-struct grid_access<T, dim, 1> {
+template <typename T, unsigned dim> struct grid_access<T, dim, 1> {
   T *self;
   unsigned ref;
 
   grid_access(T *self, unsigned ref) : self(self), ref(ref) {}
 
-  inline unsigned operator[](int i) {
-    return self->grid[ref + i];
-  }
+  inline unsigned operator[](int i) { return self->grid[ref + i]; }
 };
 
-template<typename T, unsigned dim, unsigned d>
-struct grid_access {
+template <typename T, unsigned dim, unsigned d> struct grid_access {
   T *self;
   unsigned ref;
 
@@ -86,9 +80,10 @@ struct ExchangeView {
   typedef std::vector<std::pair<int, void *>> Dest;
   Dest send, recv;
 
-  ExchangeView(MPI_Comm comm, std::vector<size_t> seclen, std::vector<size_t> first_pad, Dest send, Dest recv) :
-      comm(comm), seclen(std::move(seclen)), first_pad(std::move(first_pad)),
-      send(std::move(send)), recv(std::move(recv)) {}
+  ExchangeView(MPI_Comm comm, std::vector<size_t> seclen, std::vector<size_t> first_pad, Dest send,
+               Dest recv)
+      : comm(comm), seclen(std::move(seclen)), first_pad(std::move(first_pad)),
+        send(std::move(send)), recv(std::move(recv)) {}
 
   /**
    * @brief Exchange all ghost zones
@@ -105,11 +100,11 @@ struct ExchangeView {
 
     for (int i = 0; i < seclen.size(); ++i) {
       // receive to ghost[i]
-      MPI_Irecv((uint8_t *) recv[i].second + first_pad[i], seclen[i], MPI_CHAR, recv[i].first, i, comm,
-                &(requests[i << 1]));
+      MPI_Irecv((uint8_t *)recv[i].second + first_pad[i], seclen[i], MPI_CHAR, recv[i].first, i,
+                comm, &(requests[i << 1]));
       // send from skin[i]
-      MPI_Isend((uint8_t *) send[i].second + first_pad[i], seclen[i], MPI_CHAR, send[i].first, i, comm,
-                &(requests[(i << 1) + 1]));
+      MPI_Isend((uint8_t *)send[i].second + first_pad[i], seclen[i], MPI_CHAR, send[i].first, i,
+                comm, &(requests[(i << 1) + 1]));
     }
 
     ed = omp_get_wtime();
@@ -138,8 +133,8 @@ struct MultiStageExchangeView {
   typedef std::vector<Package> Stage;
   std::vector<Stage> send, recv;
 
-  MultiStageExchangeView(MPI_Comm comm, std::vector<Stage> send, std::vector<Stage> recv) :
-      comm(comm), send(std::move(send)), recv(std::move(recv)) {}
+  MultiStageExchangeView(MPI_Comm comm, std::vector<Stage> send, std::vector<Stage> recv)
+      : comm(comm), send(std::move(send)), recv(std::move(recv)) {}
 
   void exchange() {
 
@@ -151,9 +146,11 @@ struct MultiStageExchangeView {
     for (long i = 0; i < send.size(); ++i) {
       std::vector<MPI_Request> requests(send[i].size() + recv[i].size());
       for (long j = 0; j < recv[i].size(); ++j)
-        MPI_Irecv(recv[i][j].buf, recv[i][j].len, MPI_CHAR, recv[i][j].rank, j, comm, &(requests[j]));
+        MPI_Irecv(recv[i][j].buf, recv[i][j].len, MPI_CHAR, recv[i][j].rank, j, comm,
+                  &(requests[j]));
       for (long j = 0; j < send[i].size(); ++j)
-        MPI_Isend(send[i][j].buf, send[i][j].len, MPI_CHAR, send[i][j].rank, j, comm, &(requests[recv[i].size() + j]));
+        MPI_Isend(send[i][j].buf, send[i][j].len, MPI_CHAR, send[i][j].rank, j, comm,
+                  &(requests[recv[i].size() + j]));
       std::vector<MPI_Status> stats(requests.size());
       double stime = omp_get_wtime();
       MPI_Waitall(static_cast<int>(requests.size()), requests.data(), stats.data());
@@ -175,42 +172,38 @@ struct MultiStageExchangeView {
  * 3. Setup ghost region
  * 4. All extra ghost link to the end brick
  */
-template<unsigned dim,
-    unsigned ... BDims>
-class BrickDecomp {
+template <unsigned dim, unsigned... BDims> class BrickDecomp {
 public:
   /**
    * @brief Record start and end of each region
    */
   typedef struct {
-    BitSet neighbor;     ///< The set for the neighbor
-    unsigned skin_st;    ///< starting elements in the skin list
-    unsigned skin_ed;    ///< ending index in the skin list (not included)
-    unsigned pos;        ///< starting from which brick
-    unsigned len;        ///< ending at which brick (not included)
+    BitSet neighbor;  ///< The set for the neighbor
+    unsigned skin_st; ///< starting elements in the skin list
+    unsigned skin_ed; ///< ending index in the skin list (not included)
+    unsigned pos;     ///< starting from which brick
+    unsigned len;     ///< ending at which brick (not included)
     unsigned first_pad;
     unsigned last_pad;
   } g_region;
-  std::vector<g_region> ghost;      ///< ghost regions record
-  std::vector<g_region> skin;       ///< surface regions record
-  unsigned sep_pos[3];              ///< seperation points internal-surface-ghost
-  std::vector<BitSet> skinlist;     ///< the order of skin
-  std::vector<long> skin_size;      ///< the size of skin
+  std::vector<g_region> ghost;  ///< ghost regions record
+  std::vector<g_region> skin;   ///< surface regions record
+  unsigned sep_pos[3];          ///< seperation points internal-surface-ghost
+  std::vector<BitSet> skinlist; ///< the order of skin
+  std::vector<long> skin_size;  ///< the size of skin
 private:
-  typedef BrickDecomp<dim, BDims...> mytype;    ///< shorthand for type of this instance
+  typedef BrickDecomp<dim, BDims...> mytype; ///< shorthand for type of this instance
 
-  std::vector<unsigned> dims;       ///< dimension of internal in bricks
-  std::vector<unsigned> t_dims;     ///< dimension including ghosts in bricks
-  std::vector<unsigned> g_depth;    ///< The depth of ghostzone in bricks
-  std::vector<unsigned> stride;     ///< stride in bricks
-  unsigned *grid;                   ///< Grid indices
-  unsigned numfield;                ///< Number of fields that are interleaved
-  BrickInfo<dim> *bInfo;            ///< Associated BrickInfo
+  std::vector<unsigned> dims;    ///< dimension of internal in bricks
+  std::vector<unsigned> t_dims;  ///< dimension including ghosts in bricks
+  std::vector<unsigned> g_depth; ///< The depth of ghostzone in bricks
+  std::vector<unsigned> stride;  ///< stride in bricks
+  unsigned *grid;                ///< Grid indices
+  unsigned numfield;             ///< Number of fields that are interleaved
+  BrickInfo<dim> *bInfo;         ///< Associated BrickInfo
 
-  template<typename T, unsigned di, unsigned d>
-  friend
-  struct grid_access;               ///< Need private access for @ref grid_access
-
+  template <typename T, unsigned di, unsigned d>
+  friend struct grid_access; ///< Need private access for @ref grid_access
 
   /* Regions can be identified with:
    * Own/neighbor(ghost zone) + which region
@@ -282,18 +275,16 @@ private:
         if (i + cur < 1 || i + cur > t_dims[d] || ref < 0)
           _adj_populate(-1, d - 1, idx + i, adj);
         else
-          _adj_populate(ref + (i - 1) * (long) stride[d], d - 1, idx + i, adj);
+          _adj_populate(ref + (i - 1) * (long)stride[d], d - 1, idx + i, adj);
     }
   }
 
-  void adj_populate(unsigned i, unsigned *adj) {
-    _adj_populate(i, dim - 1, 0, adj);
-  }
+  void adj_populate(unsigned i, unsigned *adj) { _adj_populate(i, dim - 1, 0, adj); }
 
 public:
-  MPI_Comm comm;        ///< MPI communicator it is attached to
+  MPI_Comm comm; ///< MPI communicator it is attached to
 
-  std::unordered_map<uint64_t, int> rank_map;        ///< Mapping from neighbor to each neighbor's rank
+  std::unordered_map<uint64_t, int> rank_map; ///< Mapping from neighbor to each neighbor's rank
 
   /**
    * @brief MPI decomposition for bricks
@@ -304,7 +295,7 @@ public:
   BrickDecomp(const std::vector<unsigned> &dims, const unsigned depth, unsigned numfield = 1)
       : dims(dims), numfield(numfield), bInfo(nullptr), grid(nullptr) {
     assert(dims.size() == dim);
-    std::vector<unsigned> bdims = {BDims ...};
+    std::vector<unsigned> bdims = {BDims...};
     // Arrays needs to be kept contiguous first
     std::reverse(bdims.begin(), bdims.end());
 
@@ -314,6 +305,28 @@ public:
       this->dims[i] /= bdims[i];
     }
   };
+
+  /**
+   * @brief MPI decomposition for bricks
+   * @param dims the size of each dimension excluding the ghost (in elements)
+   * @param depth the depths of ghost (in elements)
+   * @param numfield number of interleaved fields
+   */
+  BrickDecomp(const std::vector<unsigned> &dims, const std::vector<long> &depth, unsigned numfield = 1)
+      : dims(dims), numfield(numfield), bInfo(nullptr), grid(nullptr) {
+    assert(dims.size() == dim);
+    assert(depth.size() == dim);
+    std::vector<unsigned> bdims = {BDims...};
+    // Arrays needs to be kept contiguous first
+    std::reverse(bdims.begin(), bdims.end());
+
+    for (int i = 0; i < dim; ++i) {
+      assert(depth[i] % bdims[i] == 0);
+      g_depth.emplace_back(depth[i] / bdims[i]);
+      this->dims[i] /= bdims[i];
+    }
+  };
+
 
   /**
    * @brief initialize the decomposition using skinlist
@@ -340,7 +353,7 @@ public:
     grid = new unsigned[grid_size];
 
     int pagesize = sysconf(_SC_PAGESIZE);
-    int bSize = cal_size<BDims ...>::value * sizeof(bElem) * numfield;
+    int bSize = cal_size<BDims...>::value * sizeof(bElem) * numfield;
 
     if (std::max(bSize, pagesize) % std::min(bSize, pagesize) != 0)
       throw std::runtime_error("brick size must be a factor/multiple of pagesize.");
@@ -367,90 +380,130 @@ public:
 #endif
     };
 
-    std::vector<unsigned> st_pos;  // The starting position of a segment
-    std::vector<bool> pad_first;
-
-    BitSet last = 0;
-    for (long i = 0; i < skinlist.size(); ++i) {
-      BitSet next = 0;
-      if (i < skinlist.size() - 1)
-        next = skinlist[i + 1];
-      pad_first.push_back(((last & skinlist[i]).size() < (skinlist[i] & next).size()));
-      last = skinlist[i];
-    }
-
-    // Allocating inner region
-    mypop(0, 0);
-
-    st_pos.emplace_back(pos);
-    sep_pos[0] = pos;
-
-    skin_size.clear();
-    // Allocating skinlist
-    for (long i = 0; i < skinlist.size(); ++i) {
-      long ppos = pos;
-      if (pad_first[i])
-        pos += calc_pad(skinlist[i]);
-      if (skinlist[i].set != 0)
-        mypop(0, skinlist[i]);
+    // Special treatment for single-brick problem
+    // TODO a better solution requires inclusion/exclusion calculation
+    bool single_brick = true;
+    for (int i = 0; i < dim; ++i)
+      single_brick = single_brick && (dims[i] == g_depth[i]);
+    if (single_brick) {
+      std::vector<unsigned> st_pos; // The starting position of a segment
       st_pos.emplace_back(pos);
-      skin_size.emplace_back(pos - ppos);
-    }
-    sep_pos[1] = pos;
-
-    /* Allocating ghost
-     * A ghost regions contains all region that are superset of the "inverse"
-     */
-    std::vector<BitSet> neighbors;
-    allneighbors(0, 1, dim, neighbors);
-    ghost.clear();
-    skin.clear();
-    for (auto n: neighbors) {
-      if (n.set == 0)
-        continue;
-      BitSet in = !n;
-      g_region g, i;
-      int last = -1;
-      g.neighbor = n;
-      i.neighbor = in;
-      // Following the order of the skinlist
-      // Record contiguousness
-      for (int l = 0; l < skinlist.size(); ++l)
-        if (in <= skinlist[l]) {
-          if (last < 0) {
-            last = l;
-            i.skin_st = g.skin_st = (unsigned) last;
-            i.first_pad = g.first_pad = pad_first[last] ? calc_pad(skinlist[last]) : 0;
-            g.pos = pos;
-            i.pos = st_pos[last];
-          }
-          if (pad_first[l])
-            pos += calc_pad(skinlist[l]);
-          mypop(n, skinlist[l]);
-        } else if (last >= 0) {
-          last = l;
-          i.last_pad = g.last_pad = pad_first[last - 1] ? 0 : calc_pad(skinlist[last - 1]);
-          g.skin_ed = (unsigned) last;
-          g.len = pos - g.pos;
-          ghost.emplace_back(g);
-          i.len = st_pos[last] - i.pos;
-          i.skin_ed = (unsigned) last;
-          skin.emplace_back(i);
-          last = -1;
-        }
-      if (last >= 0) {
-        last = skinlist.size();
-        i.last_pad = g.last_pad = pad_first[last - 1] ? 0 : calc_pad(skinlist[last - 1]);
-        g.skin_ed = (unsigned) last;
+      sep_pos[0] = pos;
+      mypop(0, 0xfff);
+      sep_pos[1] = pos;
+      st_pos.emplace_back(pos);
+      /* Allocating ghost
+       * A ghost regions contains all region that are superset of the "inverse"
+       */
+      std::vector<BitSet> neighbors;
+      allneighbors(0, 1, dim, neighbors);
+      ghost.clear();
+      skin.clear();
+      for (auto n : neighbors) {
+        if (n.set == 0)
+          continue;
+        BitSet in = !n;
+        g_region g, i;
+        g.neighbor = n;
+        i.neighbor = in;
+        for (int i = 1; i <= dim; ++i)
+          if (!in.get(i) && !in.get(-i))
+            in.flip(i);
+        i.pos = st_pos[0];
+        i.len = st_pos.back() - st_pos[0];
+        i.first_pad = g.first_pad = 0;
+        i.last_pad = g.last_pad = calc_pad(in);
+        g.pos = pos;
+        mypop(n, in);
         g.len = pos - g.pos;
         ghost.emplace_back(g);
-        i.len = st_pos[skinlist.size()] - i.pos;
-        i.skin_ed = (unsigned) last;
         skin.emplace_back(i);
+      }
+    } else {
+      std::vector<unsigned> st_pos; // The starting position of a segment
+      std::vector<bool> pad_first;
+
+      BitSet last = 0;
+      for (long i = 0; i < skinlist.size(); ++i) {
+        BitSet next = 0;
+        if (i < skinlist.size() - 1)
+          next = skinlist[i + 1];
+        pad_first.push_back(((last & skinlist[i]).size() < (skinlist[i] & next).size()));
+        last = skinlist[i];
+      }
+
+      // Allocating inner region
+      mypop(0, 0);
+
+      st_pos.emplace_back(pos);
+      sep_pos[0] = pos;
+
+      skin_size.clear();
+      // Allocating skinlist
+      for (long i = 0; i < skinlist.size(); ++i) {
+        long ppos = pos;
+        if (pad_first[i])
+          pos += calc_pad(skinlist[i]);
+        if (skinlist[i].set != 0)
+          mypop(0, skinlist[i]);
+        st_pos.emplace_back(pos);
+        skin_size.emplace_back(pos - ppos);
+      }
+      sep_pos[1] = pos;
+
+      /* Allocating ghost
+       * A ghost regions contains all region that are superset of the "inverse"
+       */
+      std::vector<BitSet> neighbors;
+      allneighbors(0, 1, dim, neighbors);
+      ghost.clear();
+      skin.clear();
+      for (auto n : neighbors) {
+        if (n.set == 0)
+          continue;
+        BitSet in = !n;
+        g_region g, i;
+        int last = -1;
+        g.neighbor = n;
+        i.neighbor = in;
+        // Following the order of the skinlist
+        // Record contiguousness
+        for (int l = 0; l < skinlist.size(); ++l)
+          if (in <= skinlist[l]) {
+            if (last < 0) {
+              last = l;
+              i.skin_st = g.skin_st = (unsigned)last;
+              i.first_pad = g.first_pad = pad_first[last] ? calc_pad(skinlist[last]) : 0;
+              g.pos = pos;
+              i.pos = st_pos[last];
+            }
+            if (pad_first[l])
+              pos += calc_pad(skinlist[l]);
+            mypop(n, skinlist[l]);
+          } else if (last >= 0) {
+            last = l;
+            i.last_pad = g.last_pad = pad_first[last - 1] ? 0 : calc_pad(skinlist[last - 1]);
+            g.skin_ed = (unsigned)last;
+            g.len = pos - g.pos;
+            ghost.emplace_back(g);
+            i.len = st_pos[last] - i.pos;
+            i.skin_ed = (unsigned)last;
+            skin.emplace_back(i);
+            last = -1;
+          }
+        if (last >= 0) {
+          last = skinlist.size();
+          i.last_pad = g.last_pad = pad_first[last - 1] ? 0 : calc_pad(skinlist[last - 1]);
+          g.skin_ed = (unsigned)last;
+          g.len = pos - g.pos;
+          ghost.emplace_back(g);
+          i.len = st_pos[skinlist.size()] - i.pos;
+          i.skin_ed = (unsigned)last;
+          skin.emplace_back(i);
+        }
       }
     }
     sep_pos[2] = pos;
-
     // Convert grid to adjlist
     int size = pos;
     if (bInfo == nullptr)
@@ -476,11 +529,13 @@ public:
     for (int i = 0; i < ghost.size(); ++i) {
       // receive to ghost[i]
       MPI_Irecv(&(bStorage.dat.get()[(ghost[i].pos + ghost[i].first_pad) * bStorage.step]),
-                (ghost[i].len - ghost[i].first_pad - ghost[i].last_pad) * bStorage.step * sizeof(bElem),
+                (ghost[i].len - ghost[i].first_pad - ghost[i].last_pad) * bStorage.step *
+                    sizeof(bElem),
                 MPI_CHAR, rank_map[ghost[i].neighbor.set], i, comm, &(requests[i << 1]));
       // send from skin[i]
       MPI_Isend(&(bStorage.dat.get()[(skin[i].pos + skin[i].first_pad) * bStorage.step]),
-                (skin[i].len - skin[i].first_pad - skin[i].last_pad) * bStorage.step * sizeof(bElem),
+                (skin[i].len - skin[i].first_pad - skin[i].last_pad) * bStorage.step *
+                    sizeof(bElem),
                 MPI_CHAR, rank_map[skin[i].neighbor.set], i, comm, &(requests[(i << 1) + 1]));
     }
 
@@ -508,9 +563,7 @@ public:
    * @brief Access the associated metadata
    * @return
    */
-  BrickInfo<dim> getBrickInfo() {
-    return *bInfo;
-  }
+  BrickInfo<dim> getBrickInfo() { return *bInfo; }
 
   ~BrickDecomp() {
     delete[] grid;
@@ -537,10 +590,10 @@ public:
     ExchangeView::Dest recv;
 
     // memfd that backs the canonical view
-    auto memfd = (MEMFD *) bStorage.mmap_info;
+    auto memfd = (MEMFD *)bStorage.mmap_info;
 
     // Iterating over neighbors
-    for (auto n: neighbors) {
+    for (auto n : neighbors) {
       // Skip
       if (n.set == 0)
         continue;
@@ -549,7 +602,7 @@ public:
       size_t len = 0;
       long first_pad_v = -1;
       long last_pad = 0;
-      for (auto g: ghost) {
+      for (auto g : ghost) {
         if (g.neighbor.set == n.set) {
           if (first_pad_v < 0)
             first_pad_v = g.first_pad * bStorage.step * sizeof(bElem);
@@ -568,7 +621,7 @@ public:
       packing.clear();
       // Send buffer
       BitSet in = !n;
-      for (auto s: skin)
+      for (auto s : skin)
         if (s.neighbor.set == in.set && s.len) {
           packing.push_back(s.pos * bStorage.step * sizeof(bElem));
           packing.push_back(s.len * bStorage.step * sizeof(bElem));
@@ -597,7 +650,7 @@ public:
     allneighbors(0, 1, dim, neighbors);
 
     // memfd that backs the canonical view
-    auto memfd = (MEMFD *) bStorage.mmap_info;
+    auto memfd = (MEMFD *)bStorage.mmap_info;
 
     BitSet exchanged = 0;
 
@@ -610,14 +663,14 @@ public:
       send.emplace_back();
       recv.emplace_back();
       // Exchanging in one direction at a time
-      for (auto &n: neighbors)
-        if (n <= exchanging && n.set != 0) {  // This neighbor is the one exchanging with
+      for (auto &n : neighbors)
+        if (n <= exchanging && n.set != 0) { // This neighbor is the one exchanging with
           MultiStageExchangeView::Package sendpkg, recvpkg;
           size_t len = 0;
           std::vector<size_t> rpacking;
           std::vector<size_t> spacking;
           // Receiving the stuff from the current neighbor
-          for (auto g: ghost)
+          for (auto g : ghost)
             if (g.neighbor.set == n.set) {
               rpacking.push_back(g.pos * bStorage.step * sizeof(bElem));
               size_t l = g.len * bStorage.step * sizeof(bElem);
@@ -625,14 +678,14 @@ public:
               len += l;
             }
           BitSet Sn = !n;
-          for (auto s: skin)
+          for (auto s : skin)
             if (s.neighbor.set == Sn.set) {
               spacking.push_back(s.pos * bStorage.step * sizeof(bElem));
               spacking.push_back(s.len * bStorage.step * sizeof(bElem));
             }
           // Receiving from neighbor's neighbor, assuming neighbor is ordered much like our own.
           BitSet n2 = n | exchanged;
-          for (auto &g: ghost) {
+          for (auto &g : ghost) {
             if (g.neighbor <= n2 && !(g.neighbor <= exchanged) && !(g.neighbor.set == n.set)) {
               // this need to be exchanged
               rpacking.push_back(g.pos * bStorage.step * sizeof(bElem));
@@ -641,10 +694,10 @@ public:
               len += l;
               // The corresponding us part also needs to be exchanged
               // Find the corresponding neighbor
-              BitSet s = g.neighbor ^n;
+              BitSet s = g.neighbor ^ n;
               for (int sec = g.skin_st; sec < g.skin_ed; ++sec)
                 // looking for the corresponding skin part
-                for (auto g2: ghost)
+                for (auto g2 : ghost)
                   if (g2.neighbor.set == s.set)
                     if (sec >= g2.skin_st && sec < g2.skin_ed) {
                       auto pos = g2.pos;
@@ -697,8 +750,9 @@ public:
     for (int i = 0; i < ghost.size(); ++i) {
       size_t len = ghost[i].len * bStorage.step * sizeof(bElem);
       // receive from remote
-      MPI_Get(&(bStorage.dat.get()[ghost[i].pos * bStorage.step]), len, MPI_CHAR, rank_map[ghost[i].neighbor.set],
-              skin[i].pos * bStorage.step * sizeof(bElem), len, MPI_CHAR, win);
+      MPI_Get(&(bStorage.dat.get()[ghost[i].pos * bStorage.step]), len, MPI_CHAR,
+              rank_map[ghost[i].neighbor.set], skin[i].pos * bStorage.step * sizeof(bElem), len,
+              MPI_CHAR, win);
     }
 
     ed = omp_get_wtime();
@@ -727,8 +781,9 @@ public:
  * populate(cart, brickDecomp, 0, 1, coo);
  * @endcode
  */
-template<unsigned dim, unsigned ...BDims>
-void populate(MPI_Comm &comm, BrickDecomp<dim, BDims...> &bDecomp, BitSet neighbor, int d, int *coo) {
+template <unsigned dim, unsigned... BDims>
+void populate(MPI_Comm &comm, BrickDecomp<dim, BDims...> &bDecomp, BitSet neighbor, int d,
+              int *coo) {
   if (d > dim) {
     int rank;
     MPI_Cart_rank(comm, coo, &rank);
@@ -788,7 +843,8 @@ inline mpi_stats mpi_statistics(double stats, MPI_Comm comm) {
  * @brief pretty print an mpi_stats object
  */
 inline std::ostream &operator<<(std::ostream &os, const mpi_stats &stats) {
-  os << "[" << stats.min << ", " << stats.avg << ", " << stats.max << "]" << " (σ: " << stats.sigma << ")";
+  os << "[" << stats.min << ", " << stats.avg << ", " << stats.max << "]"
+     << " (σ: " << stats.sigma << ")";
   return os;
 }
 
@@ -801,6 +857,7 @@ inline std::ostream &operator<<(std::ostream &os, const mpi_stats &stats) {
  * @endcode
  */
 extern std::vector<BitSet> skin3d_good;
+extern std::vector<BitSet> skin3d_faces;
 extern std::vector<BitSet> skin3d_normal, skin3d_bad;
 
-#endif //BRICK_BRICK_MPI_H
+#endif // BRICK_BRICK_MPI_H
