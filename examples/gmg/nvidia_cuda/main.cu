@@ -248,6 +248,14 @@ int main(int argc, char **argv) {
                        exchg[ilevel].avg;
         }        
         std::cout << "======================== " << std::endl;
+        std::cout << "Total Time per Level " << std::endl;
+        for (int ilevel = 0; ilevel < num_levels; ilevel++)
+        {
+          std::cout << "level "<<ilevel<<" Total time "<< pr[ilevel].avg + applyOp[ilevel].avg + 
+                                                          restr[ilevel].avg + interp[ilevel].avg +
+                                                          + exchg[ilevel].avg  << std::endl;
+        }   
+        std::cout << "======================== " << std::endl;
         std::cout << "Bricks-GMG Total Time: " << total_lvl + maxNormRes_s.avg << std::endl;
         double perf = (double)tot_elems * 1.0e-9;
         perf = perf / (total_lvl + maxNormRes_s.avg);

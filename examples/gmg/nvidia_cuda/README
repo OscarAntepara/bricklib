@@ -12,4 +12,4 @@ $ ./cuda -s 512,512,512 -I 10 -l 6 -n 20
 -I is the number of times that Ax=b is solved to gatther timing statitics as min,avg,max,stdev.
 -n number of iterations wehre the solver will stop.
 
-For Perlmutter test, a job script (script_perlmutter.sh) for the 8-nodes test is provided. An example of the Perlmutter output results is in output_GMG_Perlmutter.txt.  
+For Perlmutter test, a job script (script_perlmutter.sh) for the 8-nodes test is provided.
