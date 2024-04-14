@@ -105,7 +105,7 @@ if __name__ == "__main__":
         elif vec == 'SYCL-INTEL':
             return BackendCUDA(16, 'sglid', ocl=False)
         elif vec == 'HIP':
-            return BackendCUDA(32, 'hipThreadIdx_x')
+            return BackendCUDA(64, 'hipThreadIdx_x')
         elif vec == 'HIP-AMD':
             return BackendCUDA(64, 'hipThreadIdx_x')
         elif vec == 'DPCPP':
