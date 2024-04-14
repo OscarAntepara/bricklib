@@ -64,7 +64,7 @@ inline syclError_t sycl_malloc(T **buffer, size_t size) {
  */
 template <typename T>
 inline syclError_t sycl_memcpy(T *dst, T *ptr, size_t size, syclMemcpyKind type) {    
-    assert(type == syclMemcpyHostToDevice);
+    assert(type == syclMemcpyHostToDevice || type == syclMemcpyDeviceToHost);
     gpu_queue.memcpy((void *) dst, (void *) ptr, size).wait_and_throw();
     return sycl_success;
 }
@@ -150,6 +150,6 @@ struct syclBrick<Dim<BDims...>, Dim<Folds...> > {
   }
 };
 
-//#include "brick-gpu.h"
+#include "brick-gpu.h"
 
 #endif //BRICK_BRICK_SYCL_H

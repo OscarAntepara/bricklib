@@ -1,15 +1,20 @@
-This example solves a Ax=b system by a geometric multigrid.
+This example solves a Ax=b system by a geometric multigrid using SYCL
+
+On Sunspot load the next modules:
+module load cmake
+
 To run this benchmark test follow the next steps:
 On bricklib directory
 $ mkdir build
-$ cd build && cmake -DBRICK_GPU_AWARE=ON ..
+$ cd build && cmake -DHAS_SYCL=ON ..
 $ make gmg-sycl
 $ cd examples/gmg/intel_sycl
 $ ./sycl -s 512,512,512 -I 10 -l 6 -n 20 
 
--s is the domain size per rank. In this case is a 512^3 periodic cubic domain.
+-s is the domain size per rank. In this case is a 512^3 periodic cubic domain per rank.
 -l is the number of levels in the V-cycle.
 -I is the number of times that Ax=b is solved to gatther timing statitics as min,avg,max,stdev.
--n number of iterations wehre the solver will stop.
+-n is the maximum number of iterations allowed to solve the system.
 
-For Sunspot test, a job script (script_sunspot.sh) for the 8-nodes test is provided. An example of the Sunspot output results is in output_GMG_Sunspot.txt.  
+For Sunspot test, a job script (script_sunspot.sh) for the 8-nodes test is provided.  
+
