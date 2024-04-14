@@ -1,0 +1,10 @@
+if (BRICK_USE_HIP)
+    set(H3AXIS_INCLUDE_DIRS "${HIP_PATH}/include")
+    VSTARGET(H3AXIS mg_brick.hip.cpp mg_brick-out.hip.cpp)
+    set(HIP_SRCS main.hip.cpp ${VSTARGET_H3AXIS_OUTPUT} args.cpp)
+    set_source_files_properties(${HIP_SRCS} PROPERTIES HIP_SOURCE_PROPERTY_FORMAT 1)
+    hip_add_executable(gmg-hip ${HIP_SRCS} CLANG_OPTIONS ${CMAKE_CXX_FLAGS})
+    target_link_libraries(gmg-hip brick brick-mpi brickhelper ${MPI_CXX_LIBRARIES} ${LIBRT} hip::host /opt/cray/pe/mpich/8.1.28/gtl/lib/libmpi_gtl_hsa.so)
+    set_target_properties(gmg-hip
+            PROPERTIES OUTPUT_NAME hip)
+endif ()

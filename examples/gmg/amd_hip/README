@@ -2,7 +2,7 @@ This example solves a Ax=b system by a geometric multigrid.
 To run this benchmark test follow the next steps:
 On bricklib directory
 $ mkdir build
-$ cd build && cmake -DBRICK_GPU_AWARE=ON ..
+$ cd build && cmake -DBRICK_USE_HIP=ON -DBRICK_GPU_AWARE=ON ..
 $ make gmg-hip
 $ cd examples/gmg/amd_hip
 $ ./hip -s 512,512,512 -I 10 -l 6 -n 20 
@@ -10,6 +10,7 @@ $ ./hip -s 512,512,512 -I 10 -l 6 -n 20
 -s is the domain size per rank. In this case is a 512^3 periodic cubic domain.
 -l is the number of levels in the V-cycle.
 -I is the number of times that Ax=b is solved to gatther timing statitics as min,avg,max,stdev.
--n number of iterations wehre the solver will stop.
+-n is the maximum number of iterations where the solver will stop.
 
-For Frontier test, a job script (script_frontier.sh) for the 8-nodes test is provided. An example of the Frontier output results is in output_GMG_Frontier.txt.  
+For Frontier test, a job script (script_frontier.sh) for the 8-nodes test is provided. 
+Load the next modules for Frontier: module load PrgEnv-amd rocm craype-accel-amd-gfx90a cmake cray-mpich/8.1.28

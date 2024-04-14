@@ -1,9 +1,9 @@
 #ifndef GPU_ARRAY_H
 #define GPU_ARRAY_H
 
-#if !(defined(BRICK_BRICK_CUDA_H) || defined(BRICK_BRICK_HIP_H))
-#error "Include either brick-cuda.h or brick-hip.h for generic GPU defines"
-#endif
+//#if !(defined(BRICK_BRICK_CUDA_H) || defined(BRICK_BRICK_HIP_H))
+//#error "Include either brick-cuda.h or brick-hip.h for generic GPU defines"
+//#endif
 
 #include <vector>
 #include <cstdio>
