@@ -116,9 +116,9 @@ MPI_Comm parseArgs(int argc, char **argv, const char *program, int dims) {
     MPI_Dims_create(size, dims, (int *) dim_size.data());
 
 
-  dim_size[0] = (dim_size[0]/4 )*2;
-  dim_size[1] = (dim_size[1]/3 )*6;
-  dim_size[2] = (dim_size[2]/2 )*2;
+  //dim_size[0] = (dim_size[0]/4 )*2;
+  //dim_size[1] = (dim_size[1]/3 )*6;
+  //dim_size[2] = (dim_size[2]/2 )*2;
   std::vector<int> period(dims, 1);
   MPI_Cart_create(MPI_COMM_WORLD, dims, (int *) dim_size.data(), period.data(), true, &comm);
 
