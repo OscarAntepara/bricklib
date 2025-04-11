@@ -73,10 +73,14 @@ A large portion of the brick library is entirely based on templates and can be i
 
 * This research was supported by the Exascale Computing Project (17-SC-20-SC), a joint project of the U.S. Department of Energy's Office of Science and National Nuclear Security Administration.
 * This research used resources of the Oak Ridge Leadership Facility at the Oak Ridge National Laboratory, which is supported by the Office of Science of the U.S. Department of Energy under Contract No. DE-AC05-00OR22725.
-* This research used resources of the Argonne Leadership Computing Facility at Argonne National Laboratory, which is supported by the Office of Science of the U.S. Department of Energy under contract DE-AC02-06CH11357.
+* This work was done on a preproduction supercomputer with early versions of the Aurora software development kit, and we gratefully acknowledge the computing resources of the Argonne Leadership Computing Facility, which is a DOE Office of Science User Facility supported under Contract DE-AC02-06CH11357..
 * This research used resources in Lawrence Berkeley National Laboratory and the National Energy Research Scientific Computing Center, which are supported by the U.S. Department of Energy Office of Science’s Advanced Scientific Computing Research program under contract number DE-AC02-05CH11231.
 
 ## Publications
+
+@cite Oscar Antepara, Samuel Williams, Hans Johansen, and Mary Hall. 2025. High-Performance, Scalable Geometric Multigrid via Fine-Grain Data Blocking for GPUs. In Proceedings of the SC '24 Workshops of the International Conference on High Performance Computing, Network, Storage, and Analysis (SC-W '24). IEEE Press, 1177–1191. https://doi.org/10.1109/SCW63240.2024.00159
+
+@cite Mahesh Lakshminarasimhan, Oscar Antepara, Tuowen Zhao, Benjamin Sepanski, Protonu Basu, Hans Johansen, Mary Hall, and Samuel Williams. 2024. Bricks: A high-performance portability layer for computations on block-structured grids. Int. J. High Perform. Comput. Appl. 38, 6 (Nov 2024), 549–567. https://doi.org/10.1177/10943420241268288
 
 @cite zhao2018 Zhao, Tuowen, Samuel Williams, Mary Hall, and Hans Johansen. 2018. Delivering Performance-Portable Stencil Computations on CPUs and GPUs Using Bricks. In 2018 IEEE/ACM International Workshop on Performance, Portability and Productivity in HPC (P3HPC). 59-70. DOI:[https://doi.org/10.1109/P3HPC.2018.00009](https://doi.org/10.1109/P3HPC.2018.00009)
 
